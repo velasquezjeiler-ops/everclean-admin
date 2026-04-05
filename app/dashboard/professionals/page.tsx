@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 export default function ProfessionalsPage() {
-  const [professionals, setProfessionals] = useState([]);
+  const [professionals, setProfessionals] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
