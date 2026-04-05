@@ -2,13 +2,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-export default function LoginPage() {
+export default function LoginPage(): JSX.Element {
   const router = useRouter();
   const [email, setEmail] = useState('admin@everclean.com');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  async function handleLogin(e) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');

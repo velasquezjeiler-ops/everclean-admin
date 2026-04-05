@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-export default function ProfessionalsPage() {
+export default function ProfessionalsPage(): JSX.Element {
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
