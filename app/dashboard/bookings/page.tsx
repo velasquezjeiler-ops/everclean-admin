@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 const SC: Record<string, string> = { PENDING_ASSIGNMENT: 'bg-amber-50 text-amber-700', CONFIRMED: 'bg-blue-50 text-blue-700', IN_PROGRESS: 'bg-purple-50 text-purple-700', COMPLETED: 'bg-emerald-50 text-emerald-700', CANCELLED: 'bg-red-50 text-red-700' };
-export default function BookingsPage(): JSX.Element {
+export default function BookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);

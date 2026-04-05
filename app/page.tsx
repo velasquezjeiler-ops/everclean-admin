@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-export default function LoginPage(): JSX.Element {
+export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('admin@everclean.com');
   const [password, setPassword] = useState('');

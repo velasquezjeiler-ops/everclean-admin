@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-export default function DashboardPage(): JSX.Element {
+export default function DashboardPage() {
   const [stats, setStats] = useState({ leads: 0, bookings: 0, professionals: 0 });
   const [loading, setLoading] = useState(true);
   useEffect(() => {
