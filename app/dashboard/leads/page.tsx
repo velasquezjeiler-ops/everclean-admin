@@ -39,7 +39,8 @@ export default function LeadsPage() {
                   <span className='text-sm text-gray-400'>({selected.googleReviewCount} reseñas Google)</span>
                 </div>
               )}
-              {selected.googleHours && <p className='text-xs text-gray-400 mb-3'>{selected.googleHours}</p>}
+              {selected.googleHours && <p className="text-xs text-gray-400 mb-3">{selected.googleHours}</p>}
+<div className="mt-4 rounded-xl overflow-hidden border border-gray-200"><iframe width="100%" height="200" frameBorder="0" style={{ border: 0 }} src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBpnkZWe98km0RDpg6Zjq6_VQlFCv-lfCE&q=${encodeURIComponent(selected.googleAddress || selected.address)}`} allowFullScreen></iframe></div>
               {selected.enrichedAt && (
                 <span className='text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-full'>Enriquecido con Google Places</span>
               )}
