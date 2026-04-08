@@ -22,7 +22,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/bookings', label: 'Bookings' },
     { href: '/dashboard/professionals', label: 'Profesionales' },
     { href: '/dashboard/map', label: '🗺️ Live Map' },
-    { href: '/dashboard/map', label: '🗺️ Live Map' },
   ];
   return (
     <div className='min-h-screen bg-gray-50 flex'>
