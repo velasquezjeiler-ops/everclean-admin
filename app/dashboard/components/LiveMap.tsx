@@ -181,7 +181,7 @@ export default function LiveMap() {
         zoomControl: true,
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap © CARTO',
         maxZoom: 19,
       }).addTo(map);
@@ -507,7 +507,7 @@ export default function LiveMap() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .leaflet-container { background: #0a1628; }
+        .leaflet-container { background: '#f5f5f5'; }
       `}</style>
     </div>
   );
