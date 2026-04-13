@@ -11,7 +11,7 @@ interface Professional {
   lng: string | number;
   isAvailable: boolean;
   hourlyRate: string | number;
-  avgRating: string | number;
+  avgRating: string | number;ba
   totalServices: number;
   phone?: string;
 }
@@ -181,7 +181,7 @@ export default function LiveMap() {
         zoomControl: true,
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/stadia/{z}/{x}/{y}{r}.png', {
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap © CARTO',
         maxZoom: 19,
       }).addTo(map);
