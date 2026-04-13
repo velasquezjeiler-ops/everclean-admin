@@ -262,7 +262,7 @@ export default function LiveMap() {
   // ── Sidebar info panel ───────────────────────────────────────────────────
   const renderInfo = () => {
     if (!selected) return (
-      <div style={{ padding: '20px', color: '#9CA3AF', textAlign: 'center' }}>
+      <div style={{ padding: '20px', color: '#666', textAlign: 'center' }}>
         <div style={{ fontSize: 32, marginBottom: 8 }}>📍</div>
         <p style={{ fontSize: 13 }}>Haz clic en un pin para ver detalles</p>
       </div>
@@ -280,7 +280,7 @@ export default function LiveMap() {
               fontSize: 18, flexShrink: 0,
             }}>👷</div>
             <div>
-              <div style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{p.fullName}</div>
+              <div style={{ fontWeight: 700, color: '#1a1a1a', fontSize: 14 }}>{p.fullName}</div>
               <div style={{ fontSize: 11, color: p.isAvailable ? '#10B981' : '#9CA3AF' }}>
                 {p.isAvailable ? '🟢 Disponible' : '⚫ No disponible'}
               </div>
@@ -294,11 +294,11 @@ export default function LiveMap() {
               { label: 'Teléfono', value: p.phone || '—' },
             ].map(({ label, value }) => (
               <div key={label} style={{
-                background: 'rgba(255,255,255,0.05)', borderRadius: 8,
+                background: 'rgba(0,0,0,0.04)', borderRadius: 8,
                 padding: '8px 10px',
               }}>
-                <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>{label}</div>
-                <div style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{value}</div>
+                <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: 13, color: '#1a1a1a', fontWeight: 600 }}>{value}</div>
               </div>
             ))}
           </div>
@@ -318,7 +318,7 @@ export default function LiveMap() {
             fontSize: 18, flexShrink: 0,
           }}>🏠</div>
           <div>
-            <div style={{ fontWeight: 700, color: '#fff', fontSize: 13 }}>
+            <div style={{ fontWeight: 700, color: '#1a1a1a', fontSize: 13 }}>
               {b.company?.contactName || b.company?.name || 'Cliente'}
             </div>
             <div style={{
@@ -329,7 +329,7 @@ export default function LiveMap() {
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 10 }}>
+        <div style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>
           📍 {b.address}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -340,11 +340,11 @@ export default function LiveMap() {
             { label: 'Profesional', value: assignedPro || 'Sin asignar' },
           ].map(({ label, value }) => (
             <div key={label} style={{
-              background: 'rgba(255,255,255,0.05)', borderRadius: 8,
+              background: 'rgba(0,0,0,0.04)', borderRadius: 8,
               padding: '8px 10px',
             }}>
-              <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>{label}</div>
-              <div style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>{value}</div>
+              <div style={{ fontSize: 10, color: '#666', marginBottom: 2 }}>{label}</div>
+              <div style={{ fontSize: 12, color: '#1a1a1a', fontWeight: 600 }}>{value}</div>
             </div>
           ))}
         </div>
@@ -389,16 +389,16 @@ export default function LiveMap() {
         ].map(({ label, value, icon, color }) => (
           <div key={label} style={{
             background: `linear-gradient(135deg, ${color}, rgba(255,255,255,0.05))`,
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid #e5e7eb',
             borderRadius: 12, padding: '12px 14px',
             display: 'flex', alignItems: 'center', gap: 10,
           }}>
             <span style={{ fontSize: 22 }}>{icon}</span>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#1a1a1a', lineHeight: 1 }}>
                 {loading ? '…' : value}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{label}</div>
+              <div style={{ fontSize: 11, color: '#666', marginTop: 2 }}>{label}</div>
             </div>
           </div>
         ))}
@@ -409,7 +409,7 @@ export default function LiveMap() {
         {/* Map */}
         <div style={{
           flex: 1, borderRadius: 16, overflow: 'hidden',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid #e5e7eb',
           position: 'relative',
         }}>
           {/* Filter buttons */}
@@ -421,7 +421,7 @@ export default function LiveMap() {
               <button key={t} onClick={() => setFilterType(t)} style={{
                 padding: '6px 12px', borderRadius: 20, border: 'none',
                 background: filterType === t ? '#67C24A' : 'rgba(13,43,82,0.9)',
-                color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                color: '#1a1a1a', fontSize: 11, fontWeight: 700, cursor: 'pointer',
                 backdropFilter: 'blur(8px)',
                 transition: 'all 0.2s',
               }}>
@@ -434,16 +434,16 @@ export default function LiveMap() {
           <button onClick={loadData} style={{
             position: 'absolute', top: 12, right: 12, zIndex: 1000,
             width: 34, height: 34, borderRadius: '50%', border: 'none',
-            background: 'rgba(13,43,82,0.9)', color: '#fff',
+            background: 'rgba(255,255,255,0.9)', color: '#1a1a1a',
             fontSize: 16, cursor: 'pointer', backdropFilter: 'blur(8px)',
           }} title="Actualizar mapa">🔄</button>
 
           {loading && (
             <div style={{
               position: 'absolute', inset: 0, zIndex: 999,
-              background: 'rgba(13,43,82,0.8)',
+              background: 'rgba(255,255,255,0.8)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontSize: 14, gap: 8,
+              color: '#1a1a1a', fontSize: 14, gap: 8,
             }}>
               <span style={{ animation: 'spin 1s linear infinite' }}>⟳</span>
               Cargando mapa…
@@ -455,14 +455,14 @@ export default function LiveMap() {
           {/* Legend */}
           <div style={{
             position: 'absolute', bottom: 12, left: 12, zIndex: 1000,
-            background: 'rgba(13,43,82,0.92)', backdropFilter: 'blur(8px)',
+            background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)',
             borderRadius: 10, padding: '8px 12px',
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: '1px solid #e5e7eb',
           }}>
             {legend.map(({ color, label }) => (
               <div key={label} style={{
                 display: 'flex', alignItems: 'center', gap: 6,
-                fontSize: 10, color: 'rgba(255,255,255,0.8)', marginBottom: 3,
+                fontSize: 10, color: '#333', marginBottom: 3,
               }}>
                 <div style={{
                   width: 10, height: 10, borderRadius: '50%',
@@ -476,13 +476,13 @@ export default function LiveMap() {
 
         {/* Sidebar */}
         <div style={{
-          width: 240, background: 'rgba(13,43,82,0.6)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          width: 240, background: 'rgba(255,255,255,0.9)',
+          border: '1px solid #e5e7eb',
           borderRadius: 16, overflow: 'hidden', flexShrink: 0,
         }}>
           <div style={{
             padding: '12px 16px',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: '1px solid #e5e7eb',
             fontSize: 12, fontWeight: 700, color: '#67C24A',
             letterSpacing: '0.05em', textTransform: 'uppercase',
           }}>
@@ -492,11 +492,11 @@ export default function LiveMap() {
             {renderInfo()}
           </div>
           {selected && (
-            <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>
               <button onClick={() => setSelected(null)} style={{
                 width: '100%', padding: '8px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
-                color: '#9CA3AF', fontSize: 12, cursor: 'pointer',
+                background: 'rgba(0,0,0,0.05)', border: '1px solid #e5e7eb',
+                color: '#666', fontSize: 12, cursor: 'pointer',
               }}>
                 ✕ Cerrar
               </button>
@@ -507,7 +507,7 @@ export default function LiveMap() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .leaflet-container { background: '#f5f5f5'; }
+        .leaflet-container { background: #f5f5f5; }
       `}</style>
     </div>
   );
