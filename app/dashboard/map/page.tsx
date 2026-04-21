@@ -2,8 +2,10 @@
 
 import dynamic from 'next/dynamic';
 
-const LiveMap = dynamic(() => import('./LiveMap'), {
+const LiveMap = dynamic(() => import('../components/LiveMap'), {  // ✅ Bien
   ssr: false,
+  loading: () => ( ... ),
+});
   loading: () => (
     <div
       style={{
