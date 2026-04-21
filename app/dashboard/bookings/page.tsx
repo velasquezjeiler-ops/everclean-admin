@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-
+import MapSection from '../components/MapSection';
 const SC: Record<string, string> = {
-  PENDING_ASSIGNMENT: 'bg-amber-50 text-amber-700',
+  PENDING_ASSIGNMENT: 'bg-amber-50 text-amber-700',F
   CONFIRMED: 'bg-blue-50 text-blue-700',
   IN_PROGRESS: 'bg-purple-50 text-purple-700',
   COMPLETED: 'bg-emerald-50 text-emerald-700',
