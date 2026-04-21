@@ -69,7 +69,6 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const DEFAULT_CENTER = { lat: 40.7357, lng: -74.1724 };
-
 const geocodeCache: Record<string, { lat: number; lng: number }> = {};
 
 function toNumber(value: unknown): number | null {
@@ -138,7 +137,7 @@ export default function LiveMap() {
     [pins, filterType]
   );
 
-  const focusPin = useCallback((pin: PinItem | null, zoom = 16) => {
+  const focusPin = useCallback((pin: PinItem | null, zoom = 17) => {
     if (!pin || !mapRef.current) return;
     mapRef.current.panTo({ lat: pin.lat, lng: pin.lng });
     mapRef.current.setZoom(zoom);
@@ -252,9 +251,7 @@ export default function LiveMap() {
   }, [fitToPins, isLoaded, selectedPin]);
 
   useEffect(() => {
-    if (isLoaded) {
-      loadData();
-    }
+    if (isLoaded) loadData();
   }, [isLoaded, loadData]);
 
   useMapRefresh(() => {
@@ -466,7 +463,7 @@ export default function LiveMap() {
     return (
       <div
         style={{
-          height: 420,
+          height: 760,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -486,7 +483,7 @@ export default function LiveMap() {
     return (
       <div
         style={{
-          height: 420,
+          height: 760,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -505,8 +502,22 @@ export default function LiveMap() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        fontFamily: 'sans-serif',
+      }}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
         {[
           { label: 'Profesionales', value: stats.pros, icon: '👷', color: '#E6F1FB' },
           { label: 'Disponibles', value: stats.available, icon: '🟢', color: '#D1FAE5' },
@@ -543,11 +554,20 @@ export default function LiveMap() {
             overflow: 'hidden',
             border: '1px solid #e5e7eb',
             position: 'relative',
-            minHeight: 420,
+            minHeight: 680,
             background: '#f3f4f6',
           }}
         >
-          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: 6 }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: 12,
+              left: 12,
+              zIndex: 10,
+              display: 'flex',
+              gap: 6,
+            }}
+          >
             {(['all', 'professional', 'booking'] as const).map(t => (
               <button
                 key={t}
@@ -702,7 +722,7 @@ export default function LiveMap() {
 
         <div
           style={{
-            width: 260,
+            width: 300,
             background: 'white',
             border: '1px solid #e5e7eb',
             borderRadius: 16,
@@ -724,7 +744,7 @@ export default function LiveMap() {
             {selectedPin ? 'Detalle del pin' : 'Información'}
           </div>
 
-          <div style={{ overflowY: 'auto', maxHeight: 420 }}>{renderInfo()}</div>
+          <div style={{ overflowY: 'auto', maxHeight: 680 }}>{renderInfo()}</div>
 
           {selectedPin && (
             <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>
