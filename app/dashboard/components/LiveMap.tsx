@@ -1,7 +1,12 @@
 'use client';
-import { useEffect, useRef, useState, useCallback } from 'react';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { GoogleMap, MarkerF, useJsApiLoader } from '@react-google-maps/api';
+import { useMapRefresh } from './useMapRefresh';
+
+const API =
+  process.env.NEXT_PUBLIC_API_URL ||
+  'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
 interface Professional {
   id: string;
@@ -22,14 +27,27 @@ interface Professional {
 
 interface Booking {
   id: string;
-  address: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   status: string;
   scheduledAt?: string;
   sqft?: number;
   company?: { name?: string; contactName?: string };
   professionals?: Array<{ professional?: { fullName?: string } }>;
-  lat?: number;
-  lng?: number;
+  lat?: number | string | null;
+  lng?: number | string | null;
+}
+
+type PinType = 'professional' | 'booking';
+
+interface PinItem {
+  id: string;
+  lat: number;
+  lng: number;
+  type: PinType;
+  data: Professional | Booking;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -50,160 +68,248 @@ const STATUS_LABELS: Record<string, string> = {
   INVITED: 'Invitado',
 };
 
+const DEFAULT_CENTER = { lat: 40.7357, lng: -74.1724 };
+
 const geocodeCache: Record<string, { lat: number; lng: number }> = {};
+
+function toNumber(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n !== 0 ? n : null;
+}
+
+function buildFullAddress(b: Booking) {
+  return [b.address, b.city, b.state, b.zip].filter(Boolean).join(', ');
+}
+
+function googleMapsExternalUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+}
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null;
+
   const key = address.toLowerCase().trim();
   if (geocodeCache[key]) return geocodeCache[key];
-  try {
-    const q = encodeURIComponent(address + ', New Jersey, USA');
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-      { headers: { 'User-Agent': 'EverClean-Admin/1.0' } }
-    );
-    const data = await res.json();
-    if (data && data[0]) {
-      const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      geocodeCache[key] = result;
-      return result;
-    }
-  } catch { }
-  return null;
+
+  const googleRef = (window as any).google;
+  if (!googleRef?.maps?.Geocoder) return null;
+
+  const geocoder = new googleRef.maps.Geocoder();
+
+  return new Promise(resolve => {
+    geocoder.geocode({ address }, (results: any, status: string) => {
+      if (status === 'OK' && results?.[0]?.geometry?.location) {
+        const result = {
+          lat: results[0].geometry.location.lat(),
+          lng: results[0].geometry.location.lng(),
+        };
+        geocodeCache[key] = result;
+        resolve(result);
+      } else {
+        resolve(null);
+      }
+    });
+  });
 }
 
 export default function LiveMap() {
   const mapRef = useRef<any>(null);
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const markersRef = useRef<any[]>([]);
-  const [selected, setSelected] = useState<any>(null);
-  const [selectedType, setSelectedType] = useState<'professional' | 'booking' | null>(null);
+
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ pros: 0, available: 0, bookings: 0, inProgress: 0 });
   const [filterType, setFilterType] = useState<'all' | 'professional' | 'booking'>('all');
-  const [pins, setPins] = useState<any[]>([]);
-  const leafletRef = useRef<any>(null);
+  const [pins, setPins] = useState<PinItem[]>([]);
+  const [selectedPin, setSelectedPin] = useState<PinItem | null>(null);
+  const [stats, setStats] = useState({
+    pros: 0,
+    available: 0,
+    bookings: 0,
+    inProgress: 0,
+  });
+
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+
+  const { isLoaded, loadError } = useJsApiLoader({
+    id: 'everclean-google-map',
+    googleMapsApiKey: apiKey,
+  });
+
+  const filteredPins = useMemo(
+    () => pins.filter(pin => filterType === 'all' || pin.type === filterType),
+    [pins, filterType]
+  );
+
+  const focusPin = useCallback((pin: PinItem | null, zoom = 16) => {
+    if (!pin || !mapRef.current) return;
+    mapRef.current.panTo({ lat: pin.lat, lng: pin.lng });
+    mapRef.current.setZoom(zoom);
+  }, []);
+
+  const fitToPins = useCallback((items: PinItem[]) => {
+    const googleRef = (window as any).google;
+    if (!mapRef.current || !googleRef?.maps || items.length === 0) return;
+
+    if (items.length === 1) {
+      mapRef.current.panTo({ lat: items[0].lat, lng: items[0].lng });
+      mapRef.current.setZoom(14);
+      return;
+    }
+
+    const bounds = new googleRef.maps.LatLngBounds();
+    items.forEach(pin => bounds.extend({ lat: pin.lat, lng: pin.lng }));
+    mapRef.current.fitBounds(bounds);
+  }, []);
 
   const loadData = useCallback(async () => {
+    if (!isLoaded || !(window as any).google) return;
+
     const token = localStorage.getItem('token') || '';
     const headers = { Authorization: `Bearer ${token}` };
+
     try {
+      setLoading(true);
+
       const [prosRes, bookingsRes] = await Promise.all([
         fetch(`${API}/professionals`, { headers }),
-        fetch(`${API}/bookings?limit=50`, { headers }),
+        fetch(`${API}/bookings?limit=500`, { headers }),
       ]);
+
       const prosData = await prosRes.json();
       const bookingsData = await bookingsRes.json();
-      const professionals: Professional[] = Array.isArray(prosData) ? prosData : prosData.data || [];
-      const bookings: Booking[] = Array.isArray(bookingsData) ? bookingsData : bookingsData.data || [];
 
-      const newPins: any[] = [];
+      const professionals: Professional[] = Array.isArray(prosData) ? prosData : prosData.data || [];
+      const bookings: Booking[] = Array.isArray(bookingsData)
+        ? bookingsData
+        : bookingsData.data || [];
+
+      const nextPins: PinItem[] = [];
       let availableCount = 0;
 
       for (const p of professionals) {
-        const lat = parseFloat(String(p.lat));
-        const lng = parseFloat(String(p.lng));
-        if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+        const lat = toNumber(p.lat);
+        const lng = toNumber(p.lng);
+
+        if (lat !== null && lng !== null) {
           const isAvail = p.is_available ?? p.isAvailable ?? false;
-          if (isAvail) availableCount++;
-          newPins.push({ id: `pro-${p.id}`, lat, lng, type: 'professional', data: p });
+          if (isAvail) availableCount += 1;
+
+          nextPins.push({
+            id: `pro-${p.id}`,
+            lat,
+            lng,
+            type: 'professional',
+            data: p,
+          });
         }
       }
 
       let inProgressCount = 0;
-      const activeBookings = bookings.filter(b => !['COMPLETED', 'CANCELLED'].includes(b.status) && b.address);
-      for (const b of activeBookings) {
-        if (b.status === 'IN_PROGRESS') inProgressCount++;
+      const bookingsForMap = bookings.filter(b => Boolean(b.address || (b.lat && b.lng)));
+
+      for (const b of bookingsForMap) {
+        if (b.status === 'IN_PROGRESS') inProgressCount += 1;
+
         let coords: { lat: number; lng: number } | null = null;
-        if (b.lat && b.lng) coords = { lat: b.lat, lng: b.lng };
-        else if (b.address) coords = await geocodeAddress(b.address);
-        if (coords) newPins.push({ id: `booking-${b.id}`, lat: coords.lat, lng: coords.lng, type: 'booking', data: b });
+
+        const existingLat = toNumber(b.lat);
+        const existingLng = toNumber(b.lng);
+
+        if (existingLat !== null && existingLng !== null) {
+          coords = { lat: existingLat, lng: existingLng };
+        } else {
+          const fullAddress = buildFullAddress(b);
+          if (fullAddress) {
+            coords = await geocodeAddress(fullAddress);
+          }
+        }
+
+        if (coords) {
+          nextPins.push({
+            id: `booking-${b.id}`,
+            lat: coords.lat,
+            lng: coords.lng,
+            type: 'booking',
+            data: b,
+          });
+        }
       }
 
-      setPins(newPins);
-      setStats({ pros: professionals.length, available: availableCount, bookings: activeBookings.length, inProgress: inProgressCount });
+      setPins(nextPins);
+      setStats({
+        pros: professionals.length,
+        available: availableCount,
+        bookings: bookingsForMap.length,
+        inProgress: inProgressCount,
+      });
+
+      if (!selectedPin) {
+        setTimeout(() => fitToPins(nextPins), 0);
+      }
     } catch (e) {
       console.error('LiveMap error:', e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fitToPins, isLoaded, selectedPin]);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || mapRef.current) return;
-    const initMap = async () => {
-      const L = await import('leaflet');
-      await import('leaflet/dist/leaflet.css');
-      leafletRef.current = L;
-      if (!mapContainerRef.current) return;
-      const map = L.map(mapContainerRef.current, {
-        center: [40.7357, -74.1724],
-        zoom: 11,
-        zoomControl: true,
-      });
-      // Stadia Maps - Alidade Smooth (very similar to Google Maps)
-     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-      }).addTo(map);
-      mapRef.current = map;
+    if (isLoaded) {
       loadData();
-    };
-    initMap();
-    return () => {
-      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
-    };
-  }, [loadData]);
+    }
+  }, [isLoaded, loadData]);
+
+  useMapRefresh(() => {
+    if (isLoaded) loadData();
+  }, 30000);
 
   useEffect(() => {
-    if (!mapRef.current || !leafletRef.current) return;
-    const L = leafletRef.current;
-    markersRef.current.forEach(m => m.remove());
-    markersRef.current = [];
-    const filtered = pins.filter(p => filterType === 'all' || p.type === filterType);
-    filtered.forEach(pin => {
-      const isPro = pin.type === 'professional';
-      const pro = pin.data as Professional;
-      const booking = pin.data as Booking;
-      const isAvail = isPro ? (pro.is_available ?? pro.isAvailable ?? false) : false;
-      const color = isPro ? (isAvail ? '#10B981' : '#6B7280') : (STATUS_COLORS[booking.status] || '#6B7280');
-      const emoji = isPro ? '👷' : '🏠';
-      const size = 36;
-      const icon = L.divIcon({
-        className: '',
-        html: `<div style="width:${size}px;height:${size}px;background:${color};border:3px solid white;border-radius:50% 50% 50% 0;transform:rotate(-45deg);box-shadow:0 2px 8px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;"><span style="transform:rotate(45deg);font-size:16px;line-height:1;">${emoji}</span></div>`,
-        iconSize: [size, size + 8],
-        iconAnchor: [size / 2, size + 8],
-      });
-      const marker = L.marker([pin.lat, pin.lng], { icon }).addTo(mapRef.current);
-      marker.on('click', () => { setSelected(pin.data); setSelectedType(pin.type); });
-      markersRef.current.push(marker);
-    });
-  }, [pins, filterType]);
+    if (!selectedPin) {
+      fitToPins(filteredPins);
+    }
+  }, [filteredPins, fitToPins, selectedPin]);
 
   const renderInfo = () => {
-    if (!selected) return (
-      <div style={{ padding: 20, color: '#9CA3AF', textAlign: 'center' }}>
-        <div style={{ fontSize: 32, marginBottom: 8 }}>📍</div>
-        <p style={{ fontSize: 13 }}>Haz clic en un pin</p>
-      </div>
-    );
-    if (selectedType === 'professional') {
-      const p = selected as Professional;
+    if (!selectedPin) {
+      return (
+        <div style={{ padding: 20, color: '#9CA3AF', textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📍</div>
+          <p style={{ fontSize: 13 }}>Haz clic en un pin</p>
+        </div>
+      );
+    }
+
+    if (selectedPin.type === 'professional') {
+      const p = selectedPin.data as Professional;
       const name = p.full_name || p.fullName || 'Profesional';
       const rate = p.hourly_rate || p.hourlyRate || '—';
       const rating = parseFloat(String(p.avg_rating || p.avgRating || 0)).toFixed(1);
       const services = p.total_services ?? p.totalServices ?? 0;
       const isAvail = p.is_available ?? p.isAvailable ?? false;
+
       return (
         <div style={{ padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#E6F1FB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👷</div>
+            <div
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: '50%',
+                background: '#E6F1FB',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+              }}
+            >
+              👷
+            </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 14 }}>{name}</div>
-              <div style={{ fontSize: 11, color: isAvail ? '#10B981' : '#9CA3AF' }}>{isAvail ? '🟢 Disponible' : '⚫ No disponible'}</div>
+              <div style={{ fontSize: 11, color: isAvail ? '#10B981' : '#9CA3AF' }}>
+                {isAvail ? '🟢 Disponible' : '⚫ No disponible'}
+              </div>
             </div>
           </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {[
               { label: 'Tarifa', value: `$${rate}/h` },
@@ -211,7 +317,10 @@ export default function LiveMap() {
               { label: 'Servicios', value: String(services) },
               { label: 'Teléfono', value: p.phone || '—' },
             ].map(({ label, value }) => (
-              <div key={label} style={{ background: '#f5f7fa', borderRadius: 8, padding: '8px 10px' }}>
+              <div
+                key={label}
+                style={{ background: '#f5f7fa', borderRadius: 8, padding: '8px 10px' }}
+              >
                 <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>{label}</div>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>{value}</div>
               </div>
@@ -220,34 +329,123 @@ export default function LiveMap() {
         </div>
       );
     }
-    const b = selected as Booking;
+
+    const b = selectedPin.data as Booking;
     const assignedPro = b.professionals?.[0]?.professional?.fullName;
+    const fullAddress = buildFullAddress(b) || b.address || 'Sin dirección';
+
     return (
       <div style={{ padding: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-          <div style={{ width: 42, height: 42, borderRadius: '50%', background: STATUS_COLORS[b.status] || '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏠</div>
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: '50%',
+              background: STATUS_COLORS[b.status] || '#6B7280',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 18,
+              color: 'white',
+            }}
+          >
+            🏠
+          </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{b.company?.contactName || b.company?.name || 'Cliente'}</div>
-            <div style={{ fontSize: 11, color: STATUS_COLORS[b.status] || '#9CA3AF', fontWeight: 600 }}>{STATUS_LABELS[b.status] || b.status}</div>
+            <div style={{ fontWeight: 700, fontSize: 13 }}>
+              {b.company?.contactName || b.company?.name || 'Cliente'}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: STATUS_COLORS[b.status] || '#9CA3AF',
+                fontWeight: 600,
+              }}
+            >
+              {STATUS_LABELS[b.status] || b.status}
+            </div>
           </div>
         </div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>📍 {b.address}</div>
+
+        <div style={{ marginBottom: 12 }}>
+          <button
+            onClick={() => focusPin(selectedPin, 17)}
+            style={{
+              fontSize: 12,
+              color: '#2563EB',
+              textDecoration: 'underline',
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+            title="Centrar este servicio en el mapa"
+          >
+            📍 {fullAddress}
+          </button>
+
+          <div style={{ marginTop: 6 }}>
+            <a
+              href={googleMapsExternalUrl(selectedPin.lat, selectedPin.lng)}
+              target="_blank"
+              rel="noreferrer"
+              style={{
+                fontSize: 11,
+                color: '#10B981',
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Abrir en Google Maps ↗
+            </a>
+          </div>
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {[
-            { label: 'Fecha', value: b.scheduledAt ? new Date(b.scheduledAt).toLocaleDateString('es') : '—' },
-            { label: 'Hora', value: b.scheduledAt ? new Date(b.scheduledAt).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '—' },
+            {
+              label: 'Fecha',
+              value: b.scheduledAt
+                ? new Date(b.scheduledAt).toLocaleDateString('es')
+                : '—',
+            },
+            {
+              label: 'Hora',
+              value: b.scheduledAt
+                ? new Date(b.scheduledAt).toLocaleTimeString('es', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : '—',
+            },
             { label: 'Sqft', value: b.sqft ? `${b.sqft} ft²` : '—' },
             { label: 'Profesional', value: assignedPro || 'Sin asignar' },
           ].map(({ label, value }) => (
-            <div key={label} style={{ background: '#f5f7fa', borderRadius: 8, padding: '8px 10px' }}>
+            <div
+              key={label}
+              style={{ background: '#f5f7fa', borderRadius: 8, padding: '8px 10px' }}
+            >
               <div style={{ fontSize: 10, color: '#9CA3AF', marginBottom: 2 }}>{label}</div>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{value}</div>
             </div>
           ))}
         </div>
+
         {b.status === 'PENDING_ASSIGNMENT' && (
-          <div style={{ marginTop: 12, padding: '8px 12px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, fontSize: 12, color: '#92400E' }}>
-            ⏳ En espera de subasta
+          <div
+            style={{
+              marginTop: 12,
+              padding: '8px 12px',
+              background: '#FFFBEB',
+              border: '1px solid #FDE68A',
+              borderRadius: 8,
+              fontSize: 12,
+              color: '#92400E',
+            }}
+          >
+            ⏳ En espera de asignación
           </div>
         )}
       </div>
@@ -257,10 +455,54 @@ export default function LiveMap() {
   const legend = [
     { color: '#10B981', label: 'Pro disponible' },
     { color: '#6B7280', label: 'Pro ocupado' },
-    { color: '#F59E0B', label: 'Pendiente asignación' },
+    { color: '#F59E0B', label: 'Pendiente' },
     { color: '#3B82F6', label: 'Confirmado' },
     { color: '#8B5CF6', label: 'En curso' },
+    { color: '#10B981', label: 'Completado' },
+    { color: '#EF4444', label: 'Cancelado' },
   ];
+
+  if (loadError) {
+    return (
+      <div
+        style={{
+          height: 420,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#fff',
+          borderRadius: 16,
+          border: '1px solid #e5e7eb',
+          color: '#EF4444',
+          fontSize: 14,
+        }}
+      >
+        Error cargando Google Maps
+      </div>
+    );
+  }
+
+  if (!apiKey) {
+    return (
+      <div
+        style={{
+          height: 420,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#fff',
+          borderRadius: 16,
+          border: '1px solid #e5e7eb',
+          color: '#92400E',
+          fontSize: 14,
+          textAlign: 'center',
+          padding: 24,
+        }}
+      >
+        Falta NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'sans-serif' }}>
@@ -268,64 +510,243 @@ export default function LiveMap() {
         {[
           { label: 'Profesionales', value: stats.pros, icon: '👷', color: '#E6F1FB' },
           { label: 'Disponibles', value: stats.available, icon: '🟢', color: '#D1FAE5' },
-          { label: 'Servicios activos', value: stats.bookings, icon: '📋', color: '#EDE9FE' },
+          { label: 'Servicios en mapa', value: stats.bookings, icon: '📍', color: '#EDE9FE' },
           { label: 'En curso', value: stats.inProgress, icon: '⚡', color: '#FEF3C7' },
         ].map(({ label, value, icon, color }) => (
-          <div key={label} style={{ background: color, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            key={label}
+            style={{
+              background: color,
+              borderRadius: 12,
+              padding: '12px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+            }}
+          >
             <span style={{ fontSize: 22 }}>{icon}</span>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{loading ? '…' : value}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
+                {loading ? '…' : value}
+              </div>
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{label}</div>
             </div>
           </div>
         ))}
       </div>
+
       <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
-        <div style={{ flex: 1, borderRadius: 16, overflow: 'hidden', border: '1px solid #e5e7eb', position: 'relative' }}>
-          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 1000, display: 'flex', gap: 6 }}>
+        <div
+          style={{
+            flex: 1,
+            borderRadius: 16,
+            overflow: 'hidden',
+            border: '1px solid #e5e7eb',
+            position: 'relative',
+            minHeight: 420,
+            background: '#f3f4f6',
+          }}
+        >
+          <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: 6 }}>
             {(['all', 'professional', 'booking'] as const).map(t => (
-              <button key={t} onClick={() => setFilterType(t)} style={{
-                padding: '6px 12px', borderRadius: 20, border: 'none',
-                background: filterType === t ? '#10B981' : 'white',
-                color: filterType === t ? 'white' : '#374151',
-                fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-              }}>
+              <button
+                key={t}
+                onClick={() => {
+                  setSelectedPin(null);
+                  setFilterType(t);
+                }}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 20,
+                  border: 'none',
+                  background: filterType === t ? '#10B981' : 'white',
+                  color: filterType === t ? 'white' : '#374151',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                }}
+              >
                 {t === 'all' ? 'Todos' : t === 'professional' ? '👷 Pros' : '🏠 Servicios'}
               </button>
             ))}
           </div>
-          <button onClick={loadData} style={{ position: 'absolute', top: 12, right: 12, zIndex: 1000, width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'white', fontSize: 16, cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }} title="Actualizar">🔄</button>
+
+          <button
+            onClick={loadData}
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              zIndex: 10,
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              border: 'none',
+              background: 'white',
+              fontSize: 16,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+            }}
+            title="Actualizar"
+          >
+            🔄
+          </button>
+
           {loading && (
-            <div style={{ position: 'absolute', inset: 0, zIndex: 999, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 9,
+                background: 'rgba(255,255,255,0.75)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+              }}
+            >
               ⟳ Cargando mapa…
             </div>
           )}
-          <div ref={mapContainerRef} style={{ width: '100%', height: '100%', minHeight: 420 }} />
-          <div style={{ position: 'absolute', bottom: 30, left: 12, zIndex: 1000, background: 'white', borderRadius: 10, padding: '8px 12px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
+
+          {isLoaded && (
+            <GoogleMap
+              mapContainerStyle={{ width: '100%', height: '100%' }}
+              center={DEFAULT_CENTER}
+              zoom={8}
+              onLoad={map => {
+                mapRef.current = map;
+              }}
+              options={{
+                fullscreenControl: false,
+                streetViewControl: false,
+                mapTypeControl: false,
+                clickableIcons: false,
+              }}
+            >
+              {filteredPins.map(pin => {
+                const isPro = pin.type === 'professional';
+                const pro = pin.data as Professional;
+                const booking = pin.data as Booking;
+                const isAvail = isPro ? (pro.is_available ?? pro.isAvailable ?? false) : false;
+
+                const color = isPro
+                  ? isAvail
+                    ? '#10B981'
+                    : '#6B7280'
+                  : STATUS_COLORS[booking.status] || '#6B7280';
+
+                const isSelected = selectedPin?.id === pin.id;
+
+                return (
+                  <MarkerF
+                    key={pin.id}
+                    position={{ lat: pin.lat, lng: pin.lng }}
+                    onClick={() => {
+                      setSelectedPin(pin);
+                      focusPin(pin, 15);
+                    }}
+                    label={
+                      {
+                        text: isPro ? 'P' : 'S',
+                        color: '#ffffff',
+                        fontWeight: '700',
+                        fontSize: '10px',
+                      } as any
+                    }
+                    icon={{
+                      path: (window as any).google.maps.SymbolPath.CIRCLE,
+                      fillColor: color,
+                      fillOpacity: 1,
+                      strokeColor: '#ffffff',
+                      strokeWeight: 2,
+                      scale: isSelected ? 12 : 10,
+                    }}
+                  />
+                );
+              })}
+            </GoogleMap>
+          )}
+
+          <div
+            style={{
+              position: 'absolute',
+              bottom: 12,
+              left: 12,
+              zIndex: 10,
+              background: 'white',
+              borderRadius: 10,
+              padding: '8px 12px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            }}
+          >
             {legend.map(({ color, label }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 10, color: '#374151', marginBottom: 3 }}>
+              <div
+                key={label}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  fontSize: 10,
+                  color: '#374151',
+                  marginBottom: 3,
+                }}
+              >
                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: color }} />
                 {label}
               </div>
             ))}
           </div>
         </div>
-        <div style={{ width: 240, background: 'white', border: '1px solid #e5e7eb', borderRadius: 16, overflow: 'hidden', flexShrink: 0 }}>
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid #e5e7eb', fontSize: 12, fontWeight: 700, color: '#10B981', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
-            {selected ? 'Detalle del pin' : 'Información'}
+
+        <div
+          style={{
+            width: 260,
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: 16,
+            overflow: 'hidden',
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              padding: '12px 16px',
+              borderBottom: '1px solid #e5e7eb',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#10B981',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}
+          >
+            {selectedPin ? 'Detalle del pin' : 'Información'}
           </div>
-          <div style={{ overflowY: 'auto', maxHeight: 360 }}>{renderInfo()}</div>
-          {selected && (
+
+          <div style={{ overflowY: 'auto', maxHeight: 420 }}>{renderInfo()}</div>
+
+          {selectedPin && (
             <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>
-              <button onClick={() => { setSelected(null); setSelectedType(null); }} style={{ width: '100%', padding: 8, borderRadius: 8, background: '#f5f7fa', border: '1px solid #e5e7eb', color: '#6B7280', fontSize: 12, cursor: 'pointer' }}>
+              <button
+                onClick={() => setSelectedPin(null)}
+                style={{
+                  width: '100%',
+                  border: 'none',
+                  background: '#f3f4f6',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  cursor: 'pointer',
+                  color: '#6B7280',
+                  fontSize: 12,
+                }}
+              >
                 ✕ Cerrar
               </button>
             </div>
           )}
         </div>
       </div>
-      <style>{`.leaflet-container { background: #f0f0f0; }`}</style>
     </div>
   );
 }
