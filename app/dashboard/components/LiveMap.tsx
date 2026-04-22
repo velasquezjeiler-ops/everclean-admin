@@ -96,8 +96,8 @@ function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Symbol {
     fillOpacity: 1,
     strokeColor: '#FFFFFF',
     strokeOpacity: 1,
-    strokeWeight: selected ? 4 : 3,
-    scale: selected ? 13 : 11,
+    strokeWeight: selected ? 5 : 4,
+    scale: selected ? 16 : 14,
   };
 }
 
@@ -106,16 +106,16 @@ function getMarkerLabel(pin: PinItem): google.maps.MarkerLabel | undefined {
     return {
       text: 'P',
       color: '#FFFFFF',
-      fontWeight: '700',
-      fontSize: '12px',
+      fontWeight: '800',
+      fontSize: '14px',
     };
   }
 
   return {
     text: 'S',
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: '12px',
+    fontWeight: '800',
+    fontSize: '14px',
   };
 }
 
@@ -210,9 +210,12 @@ export default function LiveMap() {
     if (!mapRef.current) return;
 
     event.preventDefault();
+    event.stopPropagation();
 
     const currentZoom = mapRef.current.getZoom() ?? 11;
-    const nextZoom = event.deltaY < 0 ? currentZoom + 1 : currentZoom - 1;
+    const direction = event.deltaY < 0 ? 1 : -1;
+    const step = Math.abs(event.deltaY) > 40 ? 2 : 1;
+    const nextZoom = currentZoom + direction * step;
     const boundedZoom = Math.max(4, Math.min(20, nextZoom));
 
     mapRef.current.setZoom(boundedZoom);
