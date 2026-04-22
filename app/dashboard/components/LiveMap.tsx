@@ -940,6 +940,7 @@ export default function LiveMap() {
                 mapRef.current = map;
               }}
               options={{
+                gestureHandling: 'greedy',
                 fullscreenControl: false,
                 streetViewControl: false,
                 mapTypeControl: false,
