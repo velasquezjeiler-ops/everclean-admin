@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { getLocale, t } from '@/lib/i18n';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
 
@@ -19,6 +20,7 @@ function StatCard({ label, value, sub, color, icon }: any) {
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [locale, setLocale] = useState<'en' | 'es'>('es');
   const [period, setPeriod] = useState<'today'|'week'|'month'>('today');
 
   const load = useCallback(async () => {
@@ -67,7 +69,10 @@ export default function DashboardPage() {
     setLoading(false);
   }, [period]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    setLocale(getLocale());
+    load();
+  }, [load]);
 
   const STATUS_COLOR: Record<string, string> = {
     PENDING_ASSIGNMENT: 'bg-amber-100 text-amber-700',
@@ -85,7 +90,7 @@ export default function DashboardPage() {
           {(['today','week','month'] as const).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${period === p ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              {p === 'today' ? 'Today' : p === 'week' ? 'This week' : 'This month'}
+              {p === 'today' ? t(locale, 'today') : p === 'week' ? t(locale, 'thisWeek') : t(locale, 'thisMonth')}
             </button>
           ))}
         </div>
@@ -93,9 +98,9 @@ export default function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard label="Revenue" value={loading ? '...' : '$' + (data?.revenue || 0)} sub="Completed services" color="text-emerald-600" icon="💰" />
+        <StatCard label={t(locale, 'revenue')} value={loading ? '...' : '$' + (data?.revenue || 0)} sub={t(locale, 'completedServices')} color="text-emerald-600" icon="💰" />
         <StatCard label="Bookings" value={loading ? '...' : data?.periodBookings} sub={period + ' total'} color="text-blue-600" icon="📋" />
-        <StatCard label="Completed" value={loading ? '...' : data?.completed} sub="Services done" color="text-emerald-600" icon="✅" />
+        <StatCard label={t(locale, 'completed')} value={loading ? '...' : data?.completed} sub={t(locale, 'servicesDone')} color="text-emerald-600" icon="✅" />
         <StatCard label="In Progress" value={loading ? '...' : data?.inProgress} sub="Active right now" color="text-purple-600" icon="🧹" />
       </div>
 
