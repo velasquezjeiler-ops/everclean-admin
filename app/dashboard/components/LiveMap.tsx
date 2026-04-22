@@ -259,6 +259,7 @@ export default function LiveMap() {
               pov: { heading: 0, pitch: 0 },
               zoom: 1,
               addressControl: false,
+              gestureHandling: 'greedy',
               fullscreenControl: false,
               motionTracking: false,
               linksControl: true,
