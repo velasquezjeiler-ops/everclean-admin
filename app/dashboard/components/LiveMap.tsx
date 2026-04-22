@@ -81,7 +81,7 @@ function openStreetViewUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
 }
 
-function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Symbol {
+function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Icon {
   const isBooking = pin.type === 'booking';
   const booking = pin.data as Booking;
   const professional = pin.data as Professional;
@@ -90,33 +90,35 @@ function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Symbol {
     ? STATUS_COLORS[booking.status] || '#6B7280'
     : ((professional.is_available ?? professional.isAvailable) ? '#10B981' : '#4B5563');
 
+  const label = pin.type === 'professional' ? 'P' : 'S';
+  const size = selected ? 54 : 44;
+  const fontSize = selected ? 22 : 18;
+  const strokeWidth = selected ? 5 : 4;
+
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64">
+      <defs>
+        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(0,0,0,0.35)"/>
+        </filter>
+      </defs>
+      <g filter="url(#shadow)">
+        <circle cx="32" cy="32" r="${selected ? 24 : 21}" fill="${baseColor}" stroke="#FFFFFF" stroke-width="${strokeWidth}" />
+      </g>
+      <text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="800" fill="#FFFFFF">${label}</text>
+    </svg>
+  `.trim();
+
   return {
-    path: google.maps.SymbolPath.CIRCLE,
-    fillColor: baseColor,
-    fillOpacity: 1,
-    strokeColor: '#FFFFFF',
-    strokeOpacity: 1,
-    strokeWeight: selected ? 5 : 4,
-    scale: selected ? 16 : 14,
+    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+    scaledSize: new google.maps.Size(size, size),
+    anchor: new google.maps.Point(size / 2, size / 2),
+    labelOrigin: new google.maps.Point(size / 2, size / 2),
   };
 }
 
-function getMarkerLabel(pin: PinItem): google.maps.MarkerLabel | undefined {
-  if (pin.type === 'professional') {
-    return {
-      text: 'P',
-      color: '#FFFFFF',
-      fontWeight: '800',
-      fontSize: '14px',
-    };
-  }
-
-  return {
-    text: 'S',
-    color: '#FFFFFF',
-    fontWeight: '800',
-    fontSize: '14px',
-  };
+function getMarkerLabel(_pin: PinItem): google.maps.MarkerLabel | undefined {
+  return undefined;
 }
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
@@ -449,6 +451,22 @@ export default function LiveMap() {
     );
   }
 
+  const zoomIn = useCallback(() => {
+    if (!mapRef.current) return;
+    const currentZoom = mapRef.current.getZoom() ?? 11;
+    mapRef.current.setZoom(Math.min(20, currentZoom + 1));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    if (!mapRef.current) return;
+    const currentZoom = mapRef.current.getZoom() ?? 11;
+    mapRef.current.setZoom(Math.max(4, currentZoom - 1));
+  }, []);
+
+  const resetView = useCallback(() => {
+    fitToPins(filteredPins);
+  }, [fitToPins, filteredPins]);
+
   const renderInfo = () => {
     if (!selectedPin) {
       return (
@@ -748,7 +766,69 @@ export default function LiveMap() {
           )}
 
           {isLoaded && (
-            <GoogleMap
+            <div
+            style={{
+              position: 'absolute',
+              right: 14,
+              top: 14,
+              zIndex: 30,
+              display: 'grid',
+              gap: 8,
+            }}
+          >
+            <button
+              onClick={zoomIn}
+              style={{
+                border: 'none',
+                borderRadius: 12,
+                padding: '10px 12px',
+                background: '#111827',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                fontSize: 16,
+                cursor: 'pointer',
+                boxShadow: '0 8px 18px rgba(0,0,0,0.18)',
+              }}
+            >
+              + Acercar
+            </button>
+
+            <button
+              onClick={zoomOut}
+              style={{
+                border: 'none',
+                borderRadius: 12,
+                padding: '10px 12px',
+                background: '#374151',
+                color: '#FFFFFF',
+                fontWeight: 800,
+                fontSize: 16,
+                cursor: 'pointer',
+                boxShadow: '0 8px 18px rgba(0,0,0,0.18)',
+              }}
+            >
+              - Alejar
+            </button>
+
+            <button
+              onClick={resetView}
+              style={{
+                border: 'none',
+                borderRadius: 12,
+                padding: '10px 12px',
+                background: '#FFFFFF',
+                color: '#111827',
+                fontWeight: 800,
+                fontSize: 14,
+                cursor: 'pointer',
+                boxShadow: '0 8px 18px rgba(0,0,0,0.14)',
+              }}
+            >
+              Reset
+            </button>
+          </div>
+
+          <GoogleMap
               mapContainerStyle={{ width: '100%', height: '100%' }}
               center={DEFAULT_CENTER}
               zoom={8}
