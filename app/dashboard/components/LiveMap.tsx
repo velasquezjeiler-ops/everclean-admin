@@ -939,8 +939,10 @@ export default function LiveMap() {
               onLoad={map => {
                 mapRef.current = map;
               }}
-              options={{
+         options={{
                 gestureHandling: 'greedy',
+                scrollwheel: true,
+                zoomControl: true,
                 fullscreenControl: false,
                 streetViewControl: false,
                 mapTypeControl: false,
