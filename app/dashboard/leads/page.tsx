@@ -1,14 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { getLocale, t } from '@/lib/i18n';
 import { api } from '@/lib/api';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [locale, setLocale] = useState<'en' | 'es'>('es');
   const [selected, setSelected] = useState<any>(null);
 
   useEffect(() => {
+    setLocale(getLocale());
     const token = localStorage.getItem('token') || '';
     api.leads.list(token).then(data => {
       setLeads(data.data || []);
@@ -79,14 +82,14 @@ export default function LeadsPage() {
         <table className='w-full text-sm'>
           <thead><tr className='border-b border-gray-100'>
             <th className='text-left px-4 py-3 text-gray-500 font-medium'>Empresa</th>
-            <th className='text-left px-4 py-3 text-gray-500 font-medium'>Contacto</th>
+            <th className='text-left px-4 py-3 text-gray-500 font-medium'>{t(locale, 'contact')}</th>
             <th className='text-left px-4 py-3 text-gray-500 font-medium'>Google</th>
             <th className='text-left px-4 py-3 text-gray-500 font-medium'>Canal</th>
             <th className='text-left px-4 py-3 text-gray-500 font-medium'>Estado</th>
           </tr></thead>
           <tbody>
             {loading ? <tr><td colSpan={5} className='px-4 py-8 text-center text-gray-400'>Cargando...</td></tr>
-            : leads.length === 0 ? <tr><td colSpan={5} className='px-4 py-8 text-center text-gray-400'>Sin leads</td></tr>
+            : leads.length === 0 ? <tr><td colSpan={5} className='px-4 py-8 text-center text-gray-400'>{t(locale, 'noLeads')}</td></tr>
             : leads.map((lead: any) => (
               <tr key={lead.id} className='border-b border-gray-50 hover:bg-gray-50 cursor-pointer' onClick={() => setSelected(lead)}>
                 <td className='px-4 py-3'>

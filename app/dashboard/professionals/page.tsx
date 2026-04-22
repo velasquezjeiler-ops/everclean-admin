@@ -1,13 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { getLocale, t } from '@/lib/i18n';
 import { api } from '@/lib/api';
 
 export default function ProfessionalsPage() {
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [locale, setLocale] = useState<'en' | 'es'>('es');
 
   useEffect(() => {
+    setLocale(getLocale());
     const token = localStorage.getItem('token') || '';
     api.professionals.list(token).then(data => {
       setProfessionals(data.data || []);
@@ -39,15 +42,15 @@ export default function ProfessionalsPage() {
                   </div>
                   <div>
                     <p className='font-medium text-gray-900 text-sm'>{name}</p>
-                    <p className='text-xs text-gray-400'>Radio: {radius} mi</p>
+                    <p className='text-xs text-gray-400'>{t(locale, 'radius')}: {radius} mi</p>
                   </div>
                   <span className={'ml-auto text-xs px-2 py-0.5 rounded-full ' + (available ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500')}>
-                    {available ? 'Disponible' : 'No disponible'}
+                    {available ? t(locale, 'available') : t(locale, 'unavailable')}
                   </span>
                 </div>
                 <div className='flex gap-4 text-xs text-gray-500'>
-                  <span>Rating: {rating}</span>
-                  <span>{services} servicios</span>
+                  <span>{t(locale, 'rating')}: {rating}</span>
+                  <span>{services} {t(locale, 'services')}</span>
                 </div>
               </div>
             );

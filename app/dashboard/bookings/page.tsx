@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { getLocale, t } from '@/lib/i18n';
 import { api } from '@/lib/api';
 import MapSection from '../components/MapSection';
 
@@ -20,8 +21,10 @@ export default function BookingsPage() {
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [assigning, setAssigning] = useState<string | null>(null);
   const [selected, setSelected] = useState<any>(null);
+  const [locale, setLocale] = useState<'en' | 'es'>('es');
 
   useEffect(() => {
+    setLocale(getLocale());
     const token = localStorage.getItem('token') || '';
     api.bookings.list(token).then(data => {
       setBookings(data.data || []);
@@ -69,10 +72,10 @@ export default function BookingsPage() {
     const pros = professionals.filter((p: any) => p.isAvailable);
     return (
       <div>
-        <button onClick={() => setSelected(null)} className="text-sm text-gray-500 mb-6 hover:text-gray-700">← Volver a bookings</button>
+        <button onClick={() => setSelected(null)} className="text-sm text-gray-500 mb-6 hover:text-gray-700">{t(locale, 'backToBookings')}</button>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <h1 className="text-xl font-medium text-gray-900 mb-4">Asignar profesional</h1>
+            <h1 className="text-xl font-medium text-gray-900 mb-4">{t(locale, 'assignProfessional')}</h1>
             <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
               <p className="text-sm font-medium text-gray-700 mb-1">{selected.serviceType?.replace(/_/g, ' ')}</p>
               <p className="text-xs text-gray-400">{selected.address}, {selected.city}</p>
@@ -82,7 +85,7 @@ export default function BookingsPage() {
             </div>
             <div className="space-y-3">
               {pros.length === 0
-                ? <p className="text-gray-400 text-sm">No hay profesionales disponibles</p>
+                ? <p className="text-gray-400 text-sm">{t(locale, 'noAvailableProfessionals')}</p>
                 : pros.map((pro: any) => (
                 <div key={pro.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-medium text-sm flex-shrink-0">
@@ -94,20 +97,20 @@ export default function BookingsPage() {
                   </div>
                   <button onClick={() => assignProfessional(selected.id, pro.id)} disabled={assigning === selected.id}
                     className="bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-800 disabled:opacity-50">
-                    {assigning === selected.id ? 'Asignando...' : 'Asignar'}
+                    {assigning === selected.id ? t(locale, 'assigning') : t(locale, 'assign')}
                   </button>
                 </div>
               ))}
             </div>
           </div>
           <div>
-            <h2 className="text-sm font-medium text-gray-700 mb-4">Cambiar estado</h2>
+            <h2 className="text-sm font-medium text-gray-700 mb-4">{t(locale, 'changeStatus')}</h2>
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               {['PENDING_ASSIGNMENT','CONFIRMED','IN_PROGRESS','COMPLETED','CANCELLED'].map(status => (
                 <button key={status} onClick={() => updateStatus(selected.id, status)}
                   className={"w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-gray-50 flex items-center justify-between " + (selected.status === status ? 'bg-emerald-50' : '')}>
                   <span>{status.replace(/_/g, ' ')}</span>
-                  {selected.status === status && <span className="text-emerald-600 text-xs">● Actual</span>}
+                  {selected.status === status && <span className="text-emerald-600 text-xs">● {t(locale, 'current')}</span>}
                 </button>
               ))}
             </div>
@@ -124,17 +127,17 @@ export default function BookingsPage() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-gray-100">
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">Servicio</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">Empresa</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">Fecha</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">Total</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">Profesional</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">Estado</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">Acción</th>
+            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'service')}</th>
+            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'company')}</th>
+            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'date')}</th>
+            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'total')}</th>
+            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'professional')}</th>
+            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'status')}</th>
+            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'action')}</th>
           </tr></thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Cargando...</td></tr>
-            : bookings.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Sin bookings</td></tr>
+            {loading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">{t(locale, 'loading')}</td></tr>
+            : bookings.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">{t(locale, 'noBookings')}</td></tr>
             : bookings.map((b: any) => (
               <tr key={b.id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="px-4 py-3">
@@ -147,7 +150,7 @@ export default function BookingsPage() {
                 <td className="px-4 py-3 text-gray-600">
                   {b.professionals?.length > 0
                     ? b.professionals[0]?.professional?.fullName || 'Asignado'
-                    : <span className="text-amber-500 text-xs">Sin asignar</span>}
+                    : <span className="text-amber-500 text-xs">{t(locale, 'unassigned')}</span>}
                 </td>
                 <td className="px-4 py-3">
                   <span className={"text-xs px-2 py-0.5 rounded-full " + (SC[b.status] || 'bg-gray-50 text-gray-600')}>
@@ -156,7 +159,7 @@ export default function BookingsPage() {
                 </td>
                 <td className="px-4 py-3">
                   <button onClick={() => setSelected(b)} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-lg">
-                    Gestionar
+                    {t(locale, 'manage')}
                   </button>
                 </td>
               </tr>
