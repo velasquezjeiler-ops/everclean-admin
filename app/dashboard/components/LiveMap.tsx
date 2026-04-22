@@ -46,10 +46,10 @@ const DEFAULT_CENTER = { lat: 40.7357, lng: -74.1724 };
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING_ASSIGNMENT: '#F59E0B',
-  CONFIRMED: '#3B82F6',
-  IN_PROGRESS: '#8B5CF6',
-  COMPLETED: '#10B981',
-  CANCELLED: '#EF4444',
+  CONFIRMED: '#2563EB',
+  IN_PROGRESS: '#7C3AED',
+  COMPLETED: '#059669',
+  CANCELLED: '#DC2626',
   INVITED: '#6B7280',
 };
 
@@ -180,6 +180,16 @@ export default function LiveMap() {
     fullscreenControl: true,
     zoomControl: true,
   };
+
+  const legendItems = [
+    { color: '#10B981', label: 'Pro disponible', badge: 'P' },
+    { color: '#4B5563', label: 'Pro no disponible', badge: 'P' },
+    { color: STATUS_COLORS.PENDING_ASSIGNMENT, label: 'Servicio pendiente', badge: 'S' },
+    { color: STATUS_COLORS.CONFIRMED, label: 'Servicio confirmado', badge: 'S' },
+    { color: STATUS_COLORS.IN_PROGRESS, label: 'Servicio en curso', badge: 'S' },
+    { color: STATUS_COLORS.COMPLETED, label: 'Servicio completado', badge: 'S' },
+    { color: STATUS_COLORS.CANCELLED, label: 'Servicio cancelado', badge: 'S' },
+  ];
 
   const filteredPins = useMemo(
     () => pins.filter(pin => filterType === 'all' || pin.type === filterType),
