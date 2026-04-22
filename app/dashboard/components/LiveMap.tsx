@@ -223,10 +223,13 @@ export default function LiveMap() {
 
     event.preventDefault();
     event.stopPropagation();
+    if ('stopImmediatePropagation' in event) {
+      (event as any).stopImmediatePropagation?.();
+    }
 
     const currentZoom = mapRef.current.getZoom() ?? 11;
     const direction = event.deltaY < 0 ? 1 : -1;
-    const step = Math.abs(event.deltaY) > 40 ? 2 : 1;
+    const step = Math.abs(event.deltaY) > 30 ? 2 : 1;
     const nextZoom = currentZoom + direction * step;
     const boundedZoom = Math.max(4, Math.min(20, nextZoom));
 
@@ -390,12 +393,38 @@ export default function LiveMap() {
     const wrapper = mapWrapperRef.current;
     if (!wrapper) return;
 
-    wrapper.addEventListener('wheel', handleWheelZoom, { passive: false });
+    const bindTargets = () => {
+      const targets: EventTarget[] = [wrapper];
+      const gmStyle = wrapper.querySelector('.gm-style');
+      if (gmStyle) targets.push(gmStyle);
+
+      targets.forEach((target) => {
+        target.addEventListener('wheel', handleWheelZoom as EventListener, {
+          passive: false,
+          capture: true,
+        });
+      });
+
+      return () => {
+        targets.forEach((target) => {
+          target.removeEventListener('wheel', handleWheelZoom as EventListener, {
+            capture: true,
+          } as EventListenerOptions);
+        });
+      };
+    };
+
+    const cleanup = bindTargets();
+    const timer = window.setTimeout(() => {
+      cleanup();
+      bindTargets();
+    }, 1200);
 
     return () => {
-      wrapper.removeEventListener('wheel', handleWheelZoom);
+      window.clearTimeout(timer);
+      cleanup();
     };
-  }, [handleWheelZoom]);
+  }, [handleWheelZoom, isLoaded, pins.length]);
 
 
   useEffect(() => {
@@ -827,6 +856,79 @@ export default function LiveMap() {
             >
               Reset
             </button>
+          </div>
+
+          <div
+            style={{
+              position: 'absolute',
+              left: 14,
+              bottom: 14,
+              zIndex: 30,
+              background: 'rgba(255,255,255,0.96)',
+              border: '1px solid #E5E7EB',
+              borderRadius: 14,
+              padding: '10px 12px',
+              boxShadow: '0 10px 24px rgba(0,0,0,0.12)',
+              minWidth: 210,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 800,
+                color: '#374151',
+                marginBottom: 8,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Leyenda
+            </div>
+
+            <div style={{ display: 'grid', gap: 6 }}>
+              {[
+                { color: '#10B981', label: 'Pro disponible', badge: 'P' },
+                { color: '#4B5563', label: 'Pro no disponible', badge: 'P' },
+                { color: '#F59E0B', label: 'Servicio pendiente', badge: 'S' },
+                { color: '#2563EB', label: 'Servicio confirmado', badge: 'S' },
+                { color: '#7C3AED', label: 'Servicio en curso', badge: 'S' },
+                { color: '#059669', label: 'Servicio completado', badge: 'S' },
+                { color: '#DC2626', label: 'Servicio cancelado', badge: 'S' },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 12,
+                    color: '#374151',
+                    fontWeight: 600,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      background: item.color,
+                      border: '2px solid white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: 11,
+                      fontWeight: 800,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.badge}
+                  </div>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <GoogleMap
