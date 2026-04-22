@@ -28,14 +28,7 @@ const LiveMap = dynamic(() => import('./LiveMap'), {
 export default function MapSection() {
   return (
     <section style={{ marginBottom: 32 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 16,
-        }}
-      >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
         <h2
           style={{
             margin: 0,

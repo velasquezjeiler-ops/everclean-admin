@@ -222,6 +222,15 @@ export default function LiveMap() {
         }
       }
 
+      console.log('LIVE_MAP_DEBUG', {
+        professionals: professionals.length,
+        bookings: bookings.length,
+        bookingsForMap: bookingsForMap.length,
+        pinsBuilt: nextPins.length,
+        bookingPins: nextPins.filter(pin => pin.type === 'booking').length,
+        professionalPins: nextPins.filter(pin => pin.type === 'professional').length,
+      });
+
       setPins(nextPins);
       setStats({
         pros: professionals.length,

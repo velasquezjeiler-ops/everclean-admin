@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: '/dashboard/leads', label: 'Leads' },
     { href: '/dashboard/bookings', label: 'Bookings' },
     { href: '/dashboard/professionals', label: 'Profesionales' },
-     ];
+  ];
   return (
     <div className='min-h-screen bg-gray-50 flex'>
       <aside className='w-52 bg-white border-r border-gray-200 flex flex-col'>
