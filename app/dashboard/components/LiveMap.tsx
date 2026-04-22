@@ -81,6 +81,44 @@ function openStreetViewUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
 }
 
+function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Symbol {
+  const isBooking = pin.type === 'booking';
+  const booking = pin.data as Booking;
+  const professional = pin.data as Professional;
+
+  const baseColor = isBooking
+    ? STATUS_COLORS[booking.status] || '#6B7280'
+    : ((professional.is_available ?? professional.isAvailable) ? '#10B981' : '#4B5563');
+
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    fillColor: baseColor,
+    fillOpacity: 1,
+    strokeColor: '#FFFFFF',
+    strokeOpacity: 1,
+    strokeWeight: selected ? 4 : 3,
+    scale: selected ? 13 : 11,
+  };
+}
+
+function getMarkerLabel(pin: PinItem): google.maps.MarkerLabel | undefined {
+  if (pin.type === 'professional') {
+    return {
+      text: 'P',
+      color: '#FFFFFF',
+      fontWeight: '700',
+      fontSize: '12px',
+    };
+  }
+
+  return {
+    text: 'S',
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: '12px',
+  };
+}
+
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null;
 
@@ -110,6 +148,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 
 export default function LiveMap() {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const mapWrapperRef = useRef<HTMLDivElement | null>(null);
   const streetViewContainerRef = useRef<HTMLDivElement | null>(null);
   const streetViewPanoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
@@ -165,6 +204,18 @@ export default function LiveMap() {
     if (!pin || !mapRef.current) return;
     mapRef.current.panTo({ lat: pin.lat, lng: pin.lng });
     mapRef.current.setZoom(zoom);
+  }, []);
+
+  const handleWheelZoom = useCallback((event: WheelEvent) => {
+    if (!mapRef.current) return;
+
+    event.preventDefault();
+
+    const currentZoom = mapRef.current.getZoom() ?? 11;
+    const nextZoom = event.deltaY < 0 ? currentZoom + 1 : currentZoom - 1;
+    const boundedZoom = Math.max(4, Math.min(20, nextZoom));
+
+    mapRef.current.setZoom(boundedZoom);
   }, []);
 
   const loadStreetView = useCallback((lat: number, lng: number) => {
@@ -319,6 +370,18 @@ export default function LiveMap() {
       fitToPins(filteredPins);
     }
   }, [filteredPins, fitToPins, selectedPin]);
+
+  useEffect(() => {
+    const wrapper = mapWrapperRef.current;
+    if (!wrapper) return;
+
+    wrapper.addEventListener('wheel', handleWheelZoom, { passive: false });
+
+    return () => {
+      wrapper.removeEventListener('wheel', handleWheelZoom);
+    };
+  }, [handleWheelZoom]);
+
 
   useEffect(() => {
     if (!selectedPin || selectedPin.type !== 'booking') {
