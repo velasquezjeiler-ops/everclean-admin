@@ -77,6 +77,10 @@ function openGoogleMapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
 
+function openStreetViewUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+}
+
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null;
 
@@ -106,10 +110,13 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 
 export default function LiveMap() {
   const mapRef = useRef<google.maps.Map | null>(null);
+  const streetViewContainerRef = useRef<HTMLDivElement | null>(null);
+  const streetViewPanoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [pins, setPins] = useState<PinItem[]>([]);
   const [selectedPin, setSelectedPin] = useState<PinItem | null>(null);
+  const [streetViewAvailable, setStreetViewAvailable] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'professional' | 'booking'>('all');
   const [stats, setStats] = useState({
     pros: 0,
@@ -124,6 +131,16 @@ export default function LiveMap() {
     id: 'everclean-google-map',
     googleMapsApiKey: apiKey,
   });
+
+  const mapOptions: google.maps.MapOptions = {
+    gestureHandling: 'greedy',
+    scrollwheel: true,
+    clickableIcons: false,
+    streetViewControl: true,
+    mapTypeControl: true,
+    fullscreenControl: true,
+    zoomControl: true,
+  };
 
   const filteredPins = useMemo(
     () => pins.filter(pin => filterType === 'all' || pin.type === filterType),
@@ -148,6 +165,46 @@ export default function LiveMap() {
     if (!pin || !mapRef.current) return;
     mapRef.current.panTo({ lat: pin.lat, lng: pin.lng });
     mapRef.current.setZoom(zoom);
+  }, []);
+
+  const loadStreetView = useCallback((lat: number, lng: number) => {
+    if (!(window as any).google || !streetViewContainerRef.current) return;
+
+    const googleRef = (window as any).google;
+    const sv = new googleRef.maps.StreetViewService();
+
+    sv.getPanorama(
+      {
+        location: { lat, lng },
+        radius: 80,
+        source: googleRef.maps.StreetViewSource.OUTDOOR,
+      },
+      (data: any, status: string) => {
+        if (status === 'OK' && data?.location?.latLng) {
+          setStreetViewAvailable(true);
+
+          streetViewPanoramaRef.current = new googleRef.maps.StreetViewPanorama(
+            streetViewContainerRef.current!,
+            {
+              position: data.location.latLng,
+              pov: { heading: 0, pitch: 0 },
+              zoom: 1,
+              addressControl: false,
+              fullscreenControl: false,
+              motionTracking: false,
+              linksControl: true,
+              panControl: true,
+              enableCloseButton: false,
+            }
+          );
+        } else {
+          setStreetViewAvailable(false);
+          if (streetViewContainerRef.current) {
+            streetViewContainerRef.current.innerHTML = '';
+          }
+        }
+      }
+    );
   }, []);
 
   const loadData = useCallback(async () => {
@@ -263,6 +320,19 @@ export default function LiveMap() {
     }
   }, [filteredPins, fitToPins, selectedPin]);
 
+  useEffect(() => {
+    if (!selectedPin || selectedPin.type !== 'booking') {
+      setStreetViewAvailable(false);
+      if (streetViewContainerRef.current) {
+        streetViewContainerRef.current.innerHTML = '';
+      }
+      return;
+    }
+
+    loadStreetView(selectedPin.lat, selectedPin.lng);
+  }, [selectedPin, loadStreetView]);
+
+
   if (loadError) {
     return (
       <div
@@ -335,36 +405,136 @@ export default function LiveMap() {
 
     return (
       <div style={{ padding: 16 }}>
-        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+        <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
           {b.company?.contactName || b.company?.name || 'Cliente'}
         </div>
         <div
           style={{
             fontSize: 12,
             color: STATUS_COLORS[b.status] || '#6B7280',
-            fontWeight: 600,
-            marginBottom: 10,
+            fontWeight: 700,
+            marginBottom: 12,
           }}
         >
           {STATUS_LABELS[b.status] || b.status}
         </div>
 
-        <button
-          onClick={() => focusPin(selectedPin, 17)}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            padding: 0,
-            cursor: 'pointer',
-            color: '#2563EB',
-            textDecoration: 'underline',
-            textAlign: 'left',
-            fontSize: 12,
-            marginBottom: 8,
-          }}
-        >
-          📍 {fullAddress}
-        </button>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+          <div style={{ fontSize: 12, color: '#374151' }}>
+            <strong>Direccion:</strong> {fullAddress}
+          </div>
+          <div style={{ fontSize: 12, color: '#374151' }}>
+            <strong>Fecha:</strong>{' '}
+            {b.scheduledAt ? new Date(b.scheduledAt).toLocaleDateString('es-US') : '—'}
+          </div>
+          <div style={{ fontSize: 12, color: '#374151' }}>
+            <strong>Hora:</strong>{' '}
+            {b.scheduledAt
+              ? new Date(b.scheduledAt).toLocaleTimeString('es-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : '—'}
+          </div>
+          <div style={{ fontSize: 12, color: '#374151' }}>
+            <strong>Sqft:</strong> {b.sqft ? `${b.sqft} ft²` : '—'}
+          </div>
+          <div style={{ fontSize: 12, color: '#374151' }}>
+            <strong>Profesional:</strong> {assignedPro}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
+          <button
+            onClick={() => focusPin(selectedPin, 18)}
+            style={{
+              border: 'none',
+              borderRadius: 10,
+              padding: '10px 12px',
+              background: '#10B981',
+              color: 'white',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            Centrar en mapa
+          </button>
+
+          <a
+            href={openGoogleMapsUrl(selectedPin.lat, selectedPin.lng)}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              textDecoration: 'none',
+              borderRadius: 10,
+              padding: '10px 12px',
+              background: '#E5F0FF',
+              color: '#1D4ED8',
+              fontWeight: 700,
+            }}
+          >
+            Abrir en Google Maps
+          </a>
+
+          <a
+            href={openStreetViewUrl(selectedPin.lat, selectedPin.lng)}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              textDecoration: 'none',
+              borderRadius: 10,
+              padding: '10px 12px',
+              background: '#F3E8FF',
+              color: '#7C3AED',
+              fontWeight: 700,
+            }}
+          >
+            Abrir Street View
+          </a>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              color: '#6B7280',
+              marginBottom: 8,
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Vista de calle
+          </div>
+
+          <div
+            ref={streetViewContainerRef}
+            style={{
+              width: '100%',
+              height: 220,
+              borderRadius: 12,
+              overflow: 'hidden',
+              background: '#F3F4F6',
+              border: '1px solid #E5E7EB',
+            }}
+          />
+
+          {!streetViewAvailable && (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 12,
+                color: '#6B7280',
+              }}
+            >
+              No se encontro Street View cercano para esta ubicacion.
+            </div>
+          )}
+        </div>
 
         <div style={{ marginBottom: 12 }}>
           <a
