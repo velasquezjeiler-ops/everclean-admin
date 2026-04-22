@@ -46,11 +46,11 @@ const DEFAULT_CENTER = { lat: 40.7357, lng: -74.1724 };
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING_ASSIGNMENT: '#F59E0B',
-  CONFIRMED: '#2563EB',
-  IN_PROGRESS: '#7C3AED',
-  COMPLETED: '#059669',
-  CANCELLED: '#DC2626',
-  INVITED: '#6B7280',
+  CONFIRMED: '#1D4ED8',
+  IN_PROGRESS: '#6D28D9',
+  COMPLETED: '#047857',
+  CANCELLED: '#B91C1C',
+  INVITED: '#4B5563',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -87,25 +87,26 @@ function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Icon {
   const professional = pin.data as Professional;
 
   const baseColor = isBooking
-    ? STATUS_COLORS[booking.status] || '#6B7280'
-    : ((professional.is_available ?? professional.isAvailable) ? '#10B981' : '#4B5563');
+    ? STATUS_COLORS[booking.status] || '#4B5563'
+    : ((professional.is_available ?? professional.isAvailable) ? '#10B981' : '#374151');
 
   const label = pin.type === 'professional' ? 'P' : 'S';
-  const size = selected ? 54 : 44;
-  const fontSize = selected ? 22 : 18;
-  const strokeWidth = selected ? 5 : 4;
+  const size = selected ? 62 : 50;
+  const fontSize = selected ? 24 : 18;
+  const ring = selected ? '#111827' : '#FFFFFF';
+  const strokeWidth = selected ? 6 : 4;
 
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 64 64">
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 80 80">
       <defs>
         <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="rgba(0,0,0,0.35)"/>
+          <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="rgba(0,0,0,0.30)"/>
         </filter>
       </defs>
       <g filter="url(#shadow)">
-        <circle cx="32" cy="32" r="${selected ? 24 : 21}" fill="${baseColor}" stroke="#FFFFFF" stroke-width="${strokeWidth}" />
+        <circle cx="40" cy="40" r="${selected ? 26 : 22}" fill="${baseColor}" stroke="${ring}" stroke-width="${strokeWidth}" />
       </g>
-      <text x="32" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="800" fill="#FFFFFF">${label}</text>
+      <text x="40" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="800" fill="#FFFFFF">${label}</text>
     </svg>
   `.trim();
 
@@ -113,7 +114,6 @@ function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Icon {
     url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
     scaledSize: new google.maps.Size(size, size),
     anchor: new google.maps.Point(size / 2, size / 2),
-    labelOrigin: new google.maps.Point(size / 2, size / 2),
   };
 }
 
@@ -869,13 +869,13 @@ export default function LiveMap() {
               borderRadius: 14,
               padding: '10px 12px',
               boxShadow: '0 10px 24px rgba(0,0,0,0.12)',
-              minWidth: 210,
+              minWidth: 250,
             }}
           >
             <div
               style={{
-                fontSize: 11,
-                fontWeight: 800,
+                fontSize: 12,
+                fontWeight: 900,
                 color: '#374151',
                 marginBottom: 8,
                 textTransform: 'uppercase',
@@ -908,8 +908,8 @@ export default function LiveMap() {
                 >
                   <div
                     style={{
-                      width: 22,
-                      height: 22,
+                      width: 26,
+                      height: 26,
                       borderRadius: '50%',
                       background: item.color,
                       border: '2px solid white',
