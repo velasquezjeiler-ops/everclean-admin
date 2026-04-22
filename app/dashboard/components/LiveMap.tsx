@@ -882,7 +882,8 @@ export default function LiveMap() {
                 );
               })}
             </GoogleMap>
-          )}
+              </>
+            )}
         </div>
 
         <div
