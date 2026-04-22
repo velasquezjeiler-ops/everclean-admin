@@ -766,7 +766,8 @@ export default function LiveMap() {
           )}
 
           {isLoaded && (
-            <div
+            <>
+              <div
             style={{
               position: 'absolute',
               right: 14,
