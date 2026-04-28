@@ -1,171 +1,68 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { getLocale, t } from '@/lib/i18n';
-import { api } from '@/lib/api';
-import MapSection from '../components/MapSection';
-
-const SC: Record<string, string> = {
-  PENDING_ASSIGNMENT: 'bg-amber-50 text-amber-700',
-  CONFIRMED: 'bg-blue-50 text-blue-700',
-  IN_PROGRESS: 'bg-purple-50 text-purple-700',
-  COMPLETED: 'bg-emerald-50 text-emerald-700',
-  CANCELLED: 'bg-red-50 text-red-700'
-};
+import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+const STATUS_COLOR: Record<string,string> = { PENDING_ASSIGNMENT:'bg-amber-100 text-amber-700', CONFIRMED:'bg-blue-100 text-blue-700', IN_PROGRESS:'bg-purple-100 text-purple-700', COMPLETED:'bg-emerald-100 text-emerald-700', CANCELLED:'bg-red-100 text-red-700' };
 
 export default function BookingsPage() {
+  const { t } = useTranslation();
   const [bookings, setBookings] = useState<any[]>([]);
-  const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [professionals, setProfessionals] = useState<any[]>([]);
-  const [assigning, setAssigning] = useState<string | null>(null);
-  const [selected, setSelected] = useState<any>(null);
-  const [locale, setLocale] = useState<'en' | 'es'>('es');
 
   useEffect(() => {
-    setLocale(getLocale());
     const token = localStorage.getItem('token') || '';
-    api.bookings.list(token).then(data => {
-      setBookings(data.data || []);
-      setTotal(data.total || 0);
-      setLoading(false);
-    });
-    api.professionals.list(token).then(data => {
-      setProfessionals(data.data || []);
-    });
+    fetch(API+'/bookings?limit=100', { headers: { Authorization: 'Bearer '+token } })
+      .then(r => r.json()).then(d => { setBookings(d.data||[]); setLoading(false); });
   }, []);
 
-  async function assignProfessional(bookingId: string, professionalId: string) {
-    setAssigning(bookingId);
-    const token = localStorage.getItem('token') || '';
-    try {
-      const res = await fetch(API + '/bookings/' + bookingId + '/assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ professionalId })
-      });
-      if (res.ok) {
-        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'CONFIRMED' } : b));
-        setSelected((prev: any) => prev ? { ...prev, status: 'CONFIRMED' } : null);
-      }
-    } catch(e) {}
-    setAssigning(null);
-  }
-
-  async function updateStatus(bookingId: string, status: string) {
-    const token = localStorage.getItem('token') || '';
-    try {
-      const res = await fetch(API + '/bookings/' + bookingId + '/status', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ status })
-      });
-      if (res.ok) {
-        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
-        setSelected((prev: any) => prev ? { ...prev, status } : null);
-      }
-    } catch(e) {}
-  }
-
-  if (selected) {
-    const pros = professionals.filter((p: any) => p.isAvailable);
-    return (
-      <div>
-        <button onClick={() => setSelected(null)} className="text-sm text-gray-500 mb-6 hover:text-gray-700">{t(locale, 'backToBookings')}</button>
-        <div className="grid grid-cols-2 gap-6">
-          <div>
-            <h1 className="text-xl font-medium text-gray-900 mb-4">{t(locale, 'assignProfessional')}</h1>
-            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-4">
-              <p className="text-sm font-medium text-gray-700 mb-1">{selected.serviceType?.replace(/_/g, ' ')}</p>
-              <p className="text-xs text-gray-400">{selected.address}, {selected.city}</p>
-              <p className="text-xs text-gray-400">{new Date(selected.scheduledAt).toLocaleString()}</p>
-              <p className="text-xs text-gray-400">{selected.sqft} sqft</p>
-              {selected.clientNotes && <p className="text-xs text-gray-500 mt-2 bg-gray-50 p-2 rounded">{selected.clientNotes}</p>}
-            </div>
-            <div className="space-y-3">
-              {pros.length === 0
-                ? <p className="text-gray-400 text-sm">{t(locale, 'noAvailableProfessionals')}</p>
-                : pros.map((pro: any) => (
-                <div key={pro.id} className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-medium text-sm flex-shrink-0">
-                    {pro.fullName.split(' ').map((n: string) => n[0]).join('').slice(0,2)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 text-sm">{pro.fullName}</p>
-                    <p className="text-xs text-gray-400">Radio: {pro.serviceRadiusMiles}mi · Rating: {Number(pro.avgRating).toFixed(1)} · {pro.totalServices} servicios</p>
-                  </div>
-                  <button onClick={() => assignProfessional(selected.id, pro.id)} disabled={assigning === selected.id}
-                    className="bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-800 disabled:opacity-50">
-                    {assigning === selected.id ? t(locale, 'assigning') : t(locale, 'assign')}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <h2 className="text-sm font-medium text-gray-700 mb-4">{t(locale, 'changeStatus')}</h2>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              {['PENDING_ASSIGNMENT','CONFIRMED','IN_PROGRESS','COMPLETED','CANCELLED'].map(status => (
-                <button key={status} onClick={() => updateStatus(selected.id, status)}
-                  className={"w-full text-left px-4 py-3 text-sm border-b border-gray-50 hover:bg-gray-50 flex items-center justify-between " + (selected.status === status ? 'bg-emerald-50' : '')}>
-                  <span>{status.replace(/_/g, ' ')}</span>
-                  {selected.status === status && <span className="text-emerald-600 text-xs">● {t(locale, 'current')}</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div>
-      <h1 className="text-xl font-medium text-gray-900 mb-6">Bookings ({total})</h1>
-      <MapSection />
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-lg md:text-xl font-semibold text-gray-900 mb-4">{t('admin.bookings.title')} ({bookings.length})</h1>
+
+      {/* Mobile: cards. Desktop: table */}
+      <div className="hidden md:block bg-white rounded-xl border overflow-hidden">
         <table className="w-full text-sm">
-          <thead><tr className="border-b border-gray-100">
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'service')}</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'company')}</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'date')}</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'total')}</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'professional')}</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'status')}</th>
-            <th className="text-left px-4 py-3 text-gray-500 font-medium">{t(locale, 'action')}</th>
+          <thead className="bg-gray-50 text-xs text-gray-500"><tr>
+            <th className="text-left p-3">{t('admin.bookings.service')}</th>
+            <th className="text-left p-3">{t('admin.bookings.company')}</th>
+            <th className="text-left p-3">{t('admin.bookings.date')}</th>
+            <th className="text-right p-3">{t('admin.bookings.total')}</th>
+            <th className="text-left p-3">{t('admin.bookings.professional')}</th>
+            <th className="text-left p-3">{t('admin.bookings.status')}</th>
           </tr></thead>
           <tbody>
-            {loading ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">{t(locale, 'loading')}</td></tr>
-            : bookings.length === 0 ? <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">{t(locale, 'noBookings')}</td></tr>
-            : bookings.map((b: any) => (
-              <tr key={b.id} className="border-b border-gray-50 hover:bg-gray-50">
-                <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">{b.serviceType?.replace(/_/g, ' ')}</p>
-                  <p className="text-gray-400 text-xs">{b.frequency}</p>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{b.company?.name || '-'}</td>
-                <td className="px-4 py-3 text-gray-600">{new Date(b.scheduledAt).toLocaleDateString()}</td>
-                <td className="px-4 py-3 font-medium">{b.totalAmount ? '$' + b.totalAmount : '-'}</td>
-                <td className="px-4 py-3 text-gray-600">
-                  {b.professionals?.length > 0
-                    ? b.professionals[0]?.professional?.fullName || 'Asignado'
-                    : <span className="text-amber-500 text-xs">{t(locale, 'unassigned')}</span>}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={"text-xs px-2 py-0.5 rounded-full " + (SC[b.status] || 'bg-gray-50 text-gray-600')}>
-                    {b.status?.replace(/_/g, ' ')}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <button onClick={() => setSelected(b)} className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded-lg">
-                    {t(locale, 'manage')}
-                  </button>
-                </td>
+            {bookings.map(b => (
+              <tr key={b.id} className="border-t border-gray-50 hover:bg-gray-50">
+                <td className="p-3"><p className="font-medium">{(b.service_type||'').replace(/_/g,' ')}</p><p className="text-[10px] text-gray-400">{b.frequency||'ONE_TIME'}</p></td>
+                <td className="p-3 text-gray-600">{b.companyName||'—'}</td>
+                <td className="p-3 text-gray-600">{b.scheduled_at ? new Date(b.scheduled_at).toLocaleDateString() : '—'}</td>
+                <td className="p-3 text-right font-medium">${b.total_amount||0}</td>
+                <td className="p-3 text-gray-600">{b.professionals?.[0]?.professional?.fullName || t('admin.bookings.unassigned')}</td>
+                <td className="p-3"><span className={`text-[10px] px-2 py-0.5 rounded-full ${STATUS_COLOR[b.status]||''}`}>{t('statuses.'+b.status)}</span></td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {bookings.map(b => (
+          <div key={b.id} className="bg-white rounded-xl border p-3">
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <p className="font-semibold text-gray-900 text-sm truncate flex-1">{(b.service_type||'').replace(/_/g,' ')}</p>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[b.status]||''}`}>{t('statuses.'+b.status)}</span>
+            </div>
+            <p className="text-xs text-gray-500 truncate">{b.companyName||'—'} · {b.scheduled_at?new Date(b.scheduled_at).toLocaleDateString():'—'}</p>
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-xs text-gray-600">{b.professionals?.[0]?.professional?.fullName || t('admin.bookings.unassigned')}</span>
+              <span className="text-sm font-semibold text-emerald-700">${b.total_amount||0}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
