@@ -250,7 +250,13 @@
     "STANDARD_CLEANING": "Standard Cleaning",
     "CARPET_CLEANING": "Carpet Cleaning",
     "INDUSTRIAL": "Industrial",
-    "MEDICAL_FACILITY": "Medical Facility"
+    "MEDICAL_FACILITY": "Medical Facility",
+    "LAUNDRY_PICKUP": "Laundry Pickup & Delivery",
+    "CAR_WASH": "Car Wash at Home",
+    "DRY_CLEANING": "Dry Cleaning",
+    "PRESSURE_WASHING": "Pressure Washing",
+    "WINDOW_CLEANING": "Window Cleaning",
+    "ORGANIZING": "Home Organizing"
   },
   "statuses": {
     "PENDING_ASSIGNMENT": "Pending",

@@ -53,9 +53,9 @@
     "history": "History",
     "myProfile": "My Profile",
     "myJobs": "أعمالي",
-    "available": "Available",
+    "available": "متاح",
     "marketplace": "Find Jobs",
-    "dashboard": "Dashboard",
+    "dashboard": "لوحة القيادة",
     "leads": "Leads",
     "bookings": "Bookings",
     "professionals": "Professionals",
@@ -76,8 +76,8 @@
       "upcomingJobs": "Upcoming",
       "completedJobs": "Completed",
       "noJobs": "No jobs yet",
-      "checkIn": "Check in",
-      "checkOut": "Check out",
+      "checkIn": "تسجيل الوصول",
+      "checkOut": "تسجيل المغادرة",
       "sendEta": "Send ETA to client & navigate",
       "startNavigation": "Start navigation",
       "etaSent": "ETA notification sent to client",
@@ -148,7 +148,7 @@
       "upcomingServices": "Upcoming services",
       "noServices": "No services scheduled",
       "bookFirst": "Book your first cleaning service",
-      "bookNow": "Book now",
+      "bookNow": "احجز الآن",
       "assignedCleaner": "Assigned cleaner",
       "findingCleaner": "Finding your cleaner...",
       "callCleaner": "Call",
@@ -168,7 +168,7 @@
       "submitting": "Submitting..."
     },
     "history": {
-      "title": "Service History",
+      "title": "سجل الخدمات",
       "totalServices": "Total services",
       "totalSpent": "Total spent",
       "unrated": "Unrated",
@@ -183,7 +183,7 @@
       "skip": "Skip"
     },
     "profile": {
-      "title": "My Profile",
+      "title": "ملفي الشخصي",
       "saveChanges": "Save changes",
       "personalInfo": "Personal Information",
       "fullName": "Full name",
@@ -250,14 +250,20 @@
     "STANDARD_CLEANING": "Standard Cleaning",
     "CARPET_CLEANING": "Carpet Cleaning",
     "INDUSTRIAL": "Industrial",
-    "MEDICAL_FACILITY": "Medical Facility"
+    "MEDICAL_FACILITY": "Medical Facility",
+    "LAUNDRY_PICKUP": "Laundry Pickup & Delivery",
+    "CAR_WASH": "Car Wash at Home",
+    "DRY_CLEANING": "Dry Cleaning",
+    "PRESSURE_WASHING": "Pressure Washing",
+    "WINDOW_CLEANING": "Window Cleaning",
+    "ORGANIZING": "Home Organizing"
   },
   "statuses": {
-    "PENDING_ASSIGNMENT": "Pending",
-    "CONFIRMED": "Confirmed",
-    "IN_PROGRESS": "In progress",
-    "COMPLETED": "Completed",
-    "CANCELLED": "Cancelled"
+    "PENDING_ASSIGNMENT": "بانتظار التعيين",
+    "CONFIRMED": "مؤكد",
+    "IN_PROGRESS": "قيد التنفيذ",
+    "COMPLETED": "مكتمل",
+    "CANCELLED": "ملغي"
   },
   "admin": {
     "dashboard": {

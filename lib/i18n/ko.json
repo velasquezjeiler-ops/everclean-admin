@@ -14,9 +14,9 @@
     "refresh": "Refresh",
     "logout": "로그아웃",
     "login": "로그인",
-    "email": "Email",
-    "password": "Password",
-    "phone": "Phone",
+    "email": "이메일",
+    "password": "비밀번호",
+    "phone": "전화번호",
     "name": "Name",
     "address": "Address",
     "city": "City",
@@ -47,15 +47,15 @@
   "sidebar": {
     "client": "고객",
     "professional": "전문가",
-    "admin": "ADMIN",
+    "admin": "관리자",
     "myServices": "내 서비스",
     "request": "Request",
     "history": "History",
-    "myProfile": "My Profile",
+    "myProfile": "내 프로필",
     "myJobs": "내 작업",
-    "available": "Available",
+    "available": "이용 가능",
     "marketplace": "Find Jobs",
-    "dashboard": "Dashboard",
+    "dashboard": "대시보드",
     "leads": "Leads",
     "bookings": "Bookings",
     "professionals": "Professionals",
@@ -68,7 +68,7 @@
       "todayEarnings": "Today",
       "weekEarnings": "This week",
       "monthEarnings": "This month",
-      "totalEarnings": "Total earnings",
+      "totalEarnings": "총 수입",
       "servicesCompleted": "Services completed",
       "completionRate": "Completion rate",
       "avgRating": "Average rating",
@@ -76,8 +76,8 @@
       "upcomingJobs": "Upcoming",
       "completedJobs": "Completed",
       "noJobs": "No jobs yet",
-      "checkIn": "Check in",
-      "checkOut": "Check out",
+      "checkIn": "체크인",
+      "checkOut": "체크아웃",
       "sendEta": "Send ETA to client & navigate",
       "startNavigation": "Start navigation",
       "etaSent": "ETA notification sent to client",
@@ -85,8 +85,8 @@
       "milesAway": "mi away",
       "etaTime": "ETA",
       "drive": "drive",
-      "available": "Available",
-      "unavailable": "Unavailable",
+      "available": "이용 가능",
+      "unavailable": "이용 불가",
       "toggleAvailability": "Toggle availability",
       "hourlyRate": "Hourly rate",
       "perHour": "/hr",
@@ -111,7 +111,7 @@
       "sqft": "sqft"
     },
     "profile": {
-      "title": "My Profile",
+      "title": "내 프로필",
       "personalInfo": "Personal information",
       "fullName": "Full name",
       "bio": "Bio",
@@ -148,7 +148,7 @@
       "upcomingServices": "Upcoming services",
       "noServices": "No services scheduled",
       "bookFirst": "Book your first cleaning service",
-      "bookNow": "Book now",
+      "bookNow": "지금 예약",
       "assignedCleaner": "Assigned cleaner",
       "findingCleaner": "Finding your cleaner...",
       "callCleaner": "Call",
@@ -168,7 +168,7 @@
       "submitting": "Submitting..."
     },
     "history": {
-      "title": "Service History",
+      "title": "서비스 내역",
       "totalServices": "Total services",
       "totalSpent": "Total spent",
       "unrated": "Unrated",
@@ -183,7 +183,7 @@
       "skip": "Skip"
     },
     "profile": {
-      "title": "My Profile",
+      "title": "내 프로필",
       "saveChanges": "Save changes",
       "personalInfo": "Personal Information",
       "fullName": "Full name",
@@ -236,7 +236,7 @@
     "servicesOnly": "Services"
   },
   "services": {
-    "HOUSE_CLEANING": "House Cleaning",
+    "HOUSE_CLEANING": "가정 청소",
     "DEEP_CLEANING": "Deep Cleaning",
     "MOVE_IN_OUT": "Move In/Out",
     "OFFICE_CLEANING": "Office Cleaning",
@@ -250,14 +250,20 @@
     "STANDARD_CLEANING": "Standard Cleaning",
     "CARPET_CLEANING": "Carpet Cleaning",
     "INDUSTRIAL": "Industrial",
-    "MEDICAL_FACILITY": "Medical Facility"
+    "MEDICAL_FACILITY": "Medical Facility",
+    "LAUNDRY_PICKUP": "세탁 픽업",
+    "CAR_WASH": "홈 세차",
+    "DRY_CLEANING": "Dry Cleaning",
+    "PRESSURE_WASHING": "Pressure Washing",
+    "WINDOW_CLEANING": "Window Cleaning",
+    "ORGANIZING": "Home Organizing"
   },
   "statuses": {
-    "PENDING_ASSIGNMENT": "Pending",
-    "CONFIRMED": "Confirmed",
-    "IN_PROGRESS": "In progress",
-    "COMPLETED": "Completed",
-    "CANCELLED": "Cancelled"
+    "PENDING_ASSIGNMENT": "대기중",
+    "CONFIRMED": "확인됨",
+    "IN_PROGRESS": "진행중",
+    "COMPLETED": "완료",
+    "CANCELLED": "취소됨"
   },
   "admin": {
     "dashboard": {

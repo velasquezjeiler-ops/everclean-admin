@@ -47,15 +47,15 @@
   "sidebar": {
     "client": "КЛИЕНТ",
     "professional": "СПЕЦИАЛИСТ",
-    "admin": "ADMIN",
+    "admin": "АДМИН",
     "myServices": "Мои Услуги",
     "request": "Request",
     "history": "History",
-    "myProfile": "My Profile",
+    "myProfile": "Мой Профиль",
     "myJobs": "Мои Работы",
-    "available": "Available",
+    "available": "Доступные",
     "marketplace": "Find Jobs",
-    "dashboard": "Dashboard",
+    "dashboard": "Панель",
     "leads": "Leads",
     "bookings": "Bookings",
     "professionals": "Professionals",
@@ -76,8 +76,8 @@
       "upcomingJobs": "Upcoming",
       "completedJobs": "Completed",
       "noJobs": "No jobs yet",
-      "checkIn": "Check in",
-      "checkOut": "Check out",
+      "checkIn": "Отметить приход",
+      "checkOut": "Отметить уход",
       "sendEta": "Send ETA to client & navigate",
       "startNavigation": "Start navigation",
       "etaSent": "ETA notification sent to client",
@@ -85,8 +85,8 @@
       "milesAway": "mi away",
       "etaTime": "ETA",
       "drive": "drive",
-      "available": "Available",
-      "unavailable": "Unavailable",
+      "available": "Доступен",
+      "unavailable": "Недоступен",
       "toggleAvailability": "Toggle availability",
       "hourlyRate": "Hourly rate",
       "perHour": "/hr",
@@ -111,7 +111,7 @@
       "sqft": "sqft"
     },
     "profile": {
-      "title": "My Profile",
+      "title": "Мой Профиль",
       "personalInfo": "Personal information",
       "fullName": "Full name",
       "bio": "Bio",
@@ -148,7 +148,7 @@
       "upcomingServices": "Upcoming services",
       "noServices": "No services scheduled",
       "bookFirst": "Book your first cleaning service",
-      "bookNow": "Book now",
+      "bookNow": "Забронировать",
       "assignedCleaner": "Assigned cleaner",
       "findingCleaner": "Finding your cleaner...",
       "callCleaner": "Call",
@@ -168,7 +168,7 @@
       "submitting": "Submitting..."
     },
     "history": {
-      "title": "Service History",
+      "title": "История Услуг",
       "totalServices": "Total services",
       "totalSpent": "Total spent",
       "unrated": "Unrated",
@@ -183,7 +183,7 @@
       "skip": "Skip"
     },
     "profile": {
-      "title": "My Profile",
+      "title": "Мой Профиль",
       "saveChanges": "Save changes",
       "personalInfo": "Personal Information",
       "fullName": "Full name",
@@ -236,7 +236,7 @@
     "servicesOnly": "Services"
   },
   "services": {
-    "HOUSE_CLEANING": "House Cleaning",
+    "HOUSE_CLEANING": "Уборка дома",
     "DEEP_CLEANING": "Deep Cleaning",
     "MOVE_IN_OUT": "Move In/Out",
     "OFFICE_CLEANING": "Office Cleaning",
@@ -250,14 +250,20 @@
     "STANDARD_CLEANING": "Standard Cleaning",
     "CARPET_CLEANING": "Carpet Cleaning",
     "INDUSTRIAL": "Industrial",
-    "MEDICAL_FACILITY": "Medical Facility"
+    "MEDICAL_FACILITY": "Medical Facility",
+    "LAUNDRY_PICKUP": "Прачечная",
+    "CAR_WASH": "Мойка авто",
+    "DRY_CLEANING": "Dry Cleaning",
+    "PRESSURE_WASHING": "Pressure Washing",
+    "WINDOW_CLEANING": "Window Cleaning",
+    "ORGANIZING": "Home Organizing"
   },
   "statuses": {
-    "PENDING_ASSIGNMENT": "Pending",
-    "CONFIRMED": "Confirmed",
-    "IN_PROGRESS": "In progress",
-    "COMPLETED": "Completed",
-    "CANCELLED": "Cancelled"
+    "PENDING_ASSIGNMENT": "Ожидание",
+    "CONFIRMED": "Подтверждено",
+    "IN_PROGRESS": "В процессе",
+    "COMPLETED": "Завершено",
+    "CANCELLED": "Отменено"
   },
   "admin": {
     "dashboard": {
