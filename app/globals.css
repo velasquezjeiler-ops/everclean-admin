@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ec-blue-dark: #1a3a5c;
+  --ec-blue: #2563eb;
+  --ec-blue-light: #3b82f6;
+  --ec-green-dark: #166534;
+  --ec-green: #16a34a;
+  --ec-green-light: #22c55e;
+  --ec-gradient: linear-gradient(135deg, #1a3a5c 0%, #2563eb 100%);
+  --ec-gradient-green: linear-gradient(135deg, #166534 0%, #22c55e 100%);
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 @theme inline {
@@ -12,15 +20,27 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+* { box-sizing: border-box; }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* Premium sidebar gradient */
+.ec-sidebar {
+  background: linear-gradient(180deg, #0f2942 0%, #1a3a5c 40%, #1e4d2b 100%);
+}
+
+/* Stat card gradient */
+.ec-stat-blue { background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); }
+.ec-stat-green { background: linear-gradient(135deg, #166534 0%, #22c55e 100%); }
+.ec-stat-purple { background: linear-gradient(135deg, #6b21a8 0%, #a855f7 100%); }
+.ec-stat-amber { background: linear-gradient(135deg, #92400e 0%, #f59e0b 100%); }
