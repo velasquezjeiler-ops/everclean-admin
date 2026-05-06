@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 
 export default function LeadsPage() {
   const { t } = useTranslation();

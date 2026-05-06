@@ -6,7 +6,7 @@ import { useMapRefresh } from './useMapRefresh';
 
 const API =
   process.env.NEXT_PUBLIC_API_URL ||
-  'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+  'https://commercial-clean-setup.replit.app/api';
 
 type Professional = {
   id: string;

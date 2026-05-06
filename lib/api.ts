@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup--velasquezjeiler.replit.app/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
 async function request(path, options = {}, token) {
   const headers = { 'Content-Type': 'application/json', ...(token && { Authorization: 'Bearer ' + token }) };
   const res = await fetch(API_URL + path, { ...options, headers });
