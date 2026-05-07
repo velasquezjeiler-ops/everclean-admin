@@ -33,11 +33,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   const navItems: NavItem[] = [
-    { href: '/dashboard', label: t('sidebar.dashboard'), icon: 'D' },
-    { href: '/dashboard/leads', label: t('sidebar.leads'), icon: 'L' },
-    { href: '/dashboard/bookings', label: t('sidebar.bookings'), icon: 'B' },
-    { href: '/dashboard/professionals', label: t('sidebar.professionals'), icon: 'P' },
-    { href: '/dashboard/map', label: t('sidebar.liveMap'), icon: 'M' },
+    { href: '/dashboard', label: t('sidebar.dashboard'), icon: '01' },
+    { href: '/dashboard/leads', label: t('sidebar.leads'), icon: '02' },
+    { href: '/dashboard/bookings', label: t('sidebar.bookings'), icon: '03' },
+    { href: '/dashboard/professionals', label: t('sidebar.professionals'), icon: '04' },
+    { href: '/dashboard/map', label: t('sidebar.liveMap'), icon: '05' },
   ];
 
   if (!ready) return null;
@@ -46,26 +46,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <div className="p-4 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <Image src="/logo.jpg" alt="EverClean" width={42} height={42} className="rounded-xl shadow-md" />
+          <Image src="/logo.jpg" alt="EverClean" width={42} height={42} className="rounded-xl shadow-md ring-1 ring-white/20" />
           <div>
             <p className="font-extrabold text-white text-base leading-none">Ever<span className="text-[#4CAF50]">Clean</span></p>
-            <p className="text-[10px] text-[#4CAF50] font-bold tracking-[0.16em] uppercase mt-1">Admin Portal</p>
+            <p className="text-[10px] text-[#4CAF50] font-bold tracking-[0.16em] uppercase mt-1">{t('sidebar.admin')} Portal</p>
           </div>
         </div>
       </div>
 
-      <div className="mx-3 mt-4 rounded-xl border border-white/12 bg-white/10 p-3">
+      <div className="mx-3 mt-4 rounded-2xl border border-white/12 bg-white/10 p-3">
         <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#1565C0] to-[#4CAF50] text-white flex items-center justify-center text-sm font-extrabold">AD</div>
+          <div className="h-11 w-11 rounded-full bg-gradient-to-br from-[#1565C0] to-[#4CAF50] text-white flex items-center justify-center text-sm font-extrabold ring-2 ring-white/15">AD</div>
           <div className="min-w-0">
             <div className="text-sm font-extrabold text-white truncate">Admin</div>
-            <div className="text-[11px] text-white/60">Operations control</div>
+            <div className="text-[11px] text-white/60">{t('admin.dashboard.systemStatus')}</div>
           </div>
         </div>
       </div>
 
-      <div className="px-3 pt-7 pb-2 text-[10px] uppercase tracking-[0.18em] font-bold text-white/34">Navigation</div>
-      <nav className="flex-1 px-3 space-y-2">
+      <div className="px-3 pt-7 pb-2 text-[10px] uppercase tracking-[0.18em] font-bold text-white/34">{t('sidebar.navigation')}</div>
+      <nav className="flex-1 px-3 space-y-1.5">
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
           return (
@@ -74,7 +74,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               href={item.href}
               className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-all ${isActive ? 'bg-white/12 text-white font-extrabold border border-white/12 shadow-[inset_4px_0_0_#4CAF50]' : 'text-white/62 hover:bg-white/8 hover:text-white'}`}
             >
-              <span className={`h-8 w-8 rounded-lg flex items-center justify-center text-xs font-extrabold ${isActive ? 'bg-[#4CAF50]/20 text-[#B8F3C8]' : 'bg-white/8 text-white/54'}`}>{item.icon}</span>
+              <span className={`h-8 w-8 rounded-lg flex items-center justify-center text-[10px] font-extrabold ${isActive ? 'bg-[#4CAF50]/20 text-[#B8F3C8]' : 'bg-white/8 text-white/54'}`}>{item.icon}</span>
               <span>{item.label}</span>
             </Link>
           );
@@ -84,7 +84,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="p-3 border-t border-white/10 space-y-2">
         <LanguageSelector lang={lang} setLang={setLang} />
         <button onClick={logout} className="w-full flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold text-white/45 hover:bg-red-500/15 hover:text-red-200 transition-all">
-          <span className="h-8 w-8 rounded-lg flex items-center justify-center bg-white/8">S</span>
+          <span className="h-8 w-8 rounded-lg flex items-center justify-center bg-white/8">--</span>
           <span>{t('common.logout')}</span>
         </button>
       </div>
@@ -93,7 +93,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] text-[#0D1B2A] flex">
-      <aside className="hidden lg:flex w-[244px] min-h-screen flex-col shrink-0 ec-sidebar sticky top-0">
+      <aside className="hidden lg:flex w-[252px] min-h-screen flex-col shrink-0 ec-sidebar sticky top-0">
         <SidebarContent />
       </aside>
 
@@ -102,7 +102,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Image src="/logo.jpg" alt="EverClean" width={34} height={34} className="rounded-lg" />
           <span className="font-extrabold text-white">Ever<span className="text-[#4CAF50]">Clean</span></span>
         </div>
-        <button onClick={() => setMenuOpen(!menuOpen)} className="h-10 w-10 rounded-xl bg-white/10 text-white font-bold">{menuOpen ? 'X' : 'M'}</button>
+        <button onClick={() => setMenuOpen(!menuOpen)} className="h-10 w-10 rounded-xl bg-white/10 text-white font-bold">{menuOpen ? 'X' : 'Menu'}</button>
       </header>
 
       {menuOpen && (
@@ -114,7 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       )}
 
-      <main className="flex-1 min-w-0 pt-[68px] lg:pt-0 p-4 lg:p-6 overflow-x-hidden">
+      <main className="flex-1 min-w-0 pt-[68px] lg:pt-0 p-4 lg:p-7 overflow-x-hidden">
         {children}
       </main>
     </div>

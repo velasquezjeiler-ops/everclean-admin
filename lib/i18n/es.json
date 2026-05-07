@@ -59,7 +59,8 @@
     "leads": "Prospectos",
     "bookings": "Reservas",
     "professionals": "Profesionales",
-    "liveMap": "Mapa en Vivo"
+    "liveMap": "Mapa en Vivo",
+    "navigation": "Navegacion"
   },
   "pro": {
     "dashboard": {
@@ -282,38 +283,61 @@
       "noLeads": "Sin prospectos",
       "today": "Hoy",
       "thisWeek": "Esta semana",
-      "thisMonth": "Este mes"
+      "thisMonth": "Este mes",
+      "subtitle": "Monitorea reservas, profesionales, prospectos y operaciones en vivo.",
+      "selectedPeriod": "Periodo seleccionado",
+      "finishedServices": "Servicios finalizados",
+      "viewAll": "Ver todo",
+      "goodMorning": "Buenos dias",
+      "goodAfternoon": "Buenas tardes",
+      "goodEvening": "Buenas noches"
     },
     "bookings": {
       "title": "Reservas",
+      "subtitle": "Revisa solicitudes, asignaciones, estados y totales desde una cola limpia.",
       "service": "Servicio",
       "company": "Empresa",
       "date": "Fecha",
       "total": "Total",
       "professional": "Profesional",
       "status": "Estado",
-      "unassigned": "Sin asignar"
+      "unassigned": "Sin asignar",
+      "records": "registros",
+      "totalBookings": "Reservas totales",
+      "activeWork": "Trabajo activo",
+      "totalRevenue": "Ingresos totales",
+      "noBookings": "Sin reservas aun"
     },
     "leads": {
       "title": "Prospectos",
+      "subtitle": "Controla el pipeline comercial y el estado de conversion.",
       "businessName": "Negocio",
       "contact": "Contacto",
       "status": "Estado",
       "value": "Valor",
-      "source": "Fuente"
+      "source": "Fuente",
+      "new": "Nuevo",
+      "converted": "Convertido",
+      "records": "registros",
+      "totalLeads": "Prospectos totales",
+      "open": "Prospectos abiertos"
     },
     "professionals": {
       "title": "Profesionales",
+      "subtitle": "Administra disponibilidad, tarifa, historial y datos de cobertura.",
       "name": "Nombre",
       "rate": "Tarifa",
       "rating": "Calificación",
       "services": "Servicios",
       "phone": "Teléfono",
       "available": "Disponible",
-      "unavailable": "No disponible"
+      "unavailable": "No disponible",
+      "records": "registros",
+      "avgRate": "Tarifa promedio"
     },
     "map": {
       "title": "Mapa en Vivo",
+      "subtitle": "Visualiza profesionales activos y servicios geolocalizados en campo.",
       "autoRefresh": "Auto-actualización 30s",
       "professionals": "Profesionales",
       "availableCount": "Disponibles",

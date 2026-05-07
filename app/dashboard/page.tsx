@@ -8,11 +8,11 @@ const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', greenDk:'#388E3C', 
 
 type Period = 'today' | 'week' | 'month';
 
-function greeting() {
+function greeting(t: (key: string) => string) {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return t('admin.dashboard.goodMorning');
+  if (hour < 18) return t('admin.dashboard.goodAfternoon');
+  return t('admin.dashboard.goodEvening');
 }
 
 function serviceLabel(value?: string) {
@@ -82,17 +82,18 @@ export default function DashboardPage() {
   };
 
   const stats = [
-    { label: t('admin.dashboard.revenue'), value: `$${loading ? '...' : data?.revenue || 0}`, sub: 'Selected period', bg: 'linear-gradient(135deg, #4CAF50, #388E3C)' },
-    { label: t('sidebar.bookings'), value: loading ? '...' : data?.periodBookings || 0, sub: periodLabels[period], bg: 'linear-gradient(135deg, #1565C0, #0D3781)' },
-    { label: t('statuses.COMPLETED'), value: loading ? '...' : data?.completed || 0, sub: 'Finished services', bg: 'linear-gradient(135deg, #7C3AED, #5B21B6)' },
+    { label: t('admin.dashboard.revenue'), value: `$${loading ? '...' : data?.revenue || 0}`, sub: t('admin.dashboard.selectedPeriod'), color: C.green },
+    { label: t('sidebar.bookings'), value: loading ? '...' : data?.periodBookings || 0, sub: periodLabels[period], color: C.navy },
+    { label: t('statuses.COMPLETED'), value: loading ? '...' : data?.completed || 0, sub: t('admin.dashboard.finishedServices'), color: C.blue },
   ];
 
   return (
-    <div className="max-w-[1440px] mx-auto font-sans">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-5">
+    <div className="ec-page font-sans">
+      <div className="ec-page-header">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-extrabold tracking-normal text-[#0D1B2A]">{greeting()}, Admin</h1>
-          <p className="text-sm text-[#64748B] mt-1">Monitor bookings, professionals, leads, and live operations.</p>
+          <p className="ec-eyebrow">{t('admin.dashboard.title')}</p>
+          <h1 className="ec-title">{greeting(t)}, Admin</h1>
+          <p className="ec-subtitle">{t('admin.dashboard.subtitle')}</p>
         </div>
         <div className="inline-flex w-fit gap-1 rounded-xl bg-[#EAF0F7] p-1">
           {(['today', 'week', 'month'] as Period[]).map((p) => (
@@ -105,11 +106,13 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
         {stats.map((s) => (
-          <section key={s.label} className="relative overflow-hidden rounded-2xl p-6 text-white shadow-[0_14px_28px_rgba(13,55,129,0.12)]" style={{ background: s.bg }}>
-            <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-white/10" />
-            <div className="text-sm font-bold opacity-90">{s.label}</div>
-            <div className="mt-2 text-4xl font-extrabold">{s.value}</div>
-            <div className="mt-1 text-xs font-bold opacity-80">{s.sub}</div>
+          <section key={s.label} className="ec-card p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-bold text-[#64748B]">{s.label}</div>
+              <div className="h-9 w-9 rounded-xl" style={{ background: `${s.color}18` }} />
+            </div>
+            <div className="mt-3 text-4xl font-extrabold" style={{ color: s.color }}>{s.value}</div>
+            <div className="mt-1 text-xs font-bold text-[#64748B]">{s.sub}</div>
           </section>
         ))}
       </div>
@@ -121,7 +124,7 @@ export default function DashboardPage() {
           { label: t('sidebar.professionals'), value: data?.totalPros || 0, color: C.green },
           { label: t('sidebar.leads'), value: data?.totalLeads || 0, color: '#7C3AED' },
         ].map((s) => (
-          <section key={s.label} className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+          <section key={s.label} className="ec-panel p-5">
             <div className="text-xs font-bold uppercase tracking-wide text-[#64748B]">{s.label}</div>
             <div className="mt-2 text-3xl font-extrabold" style={{ color: s.color }}>{loading ? '...' : s.value}</div>
           </section>
@@ -129,10 +132,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.9fr] gap-5">
-        <section className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <section className="ec-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-extrabold text-[#0D1B2A]">{t('admin.dashboard.recentBookings')}</h2>
-            <Link href="/dashboard/bookings" className="text-xs font-extrabold text-[#1565C0]">View all</Link>
+            <Link href="/dashboard/bookings" className="text-xs font-extrabold text-[#1565C0]">{t('admin.dashboard.viewAll')}</Link>
           </div>
           <div className="space-y-3">
             {(data?.recentBookings || []).map((b: any) => (
@@ -146,14 +149,14 @@ export default function DashboardPage() {
                 </div>
               </div>
             ))}
-            {!loading && !(data?.recentBookings || []).length && <div className="py-12 text-center text-sm text-[#64748B]">No bookings yet</div>}
+            {!loading && !(data?.recentBookings || []).length && <div className="py-12 text-center text-sm text-[#64748B]">{t('admin.bookings.noBookings')}</div>}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <section className="ec-card p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-extrabold text-[#0D1B2A]">{t('admin.dashboard.commercialLeads')}</h2>
-            <Link href="/dashboard/leads" className="text-xs font-extrabold text-[#1565C0]">View all</Link>
+            <Link href="/dashboard/leads" className="text-xs font-extrabold text-[#1565C0]">{t('admin.dashboard.viewAll')}</Link>
           </div>
           <div className="space-y-3">
             {(data?.recentLeads || []).map((l: any) => (

@@ -59,7 +59,8 @@
     "leads": "Leads",
     "bookings": "Bookings",
     "professionals": "Professionals",
-    "liveMap": "Live Map"
+    "liveMap": "Live Map",
+    "navigation": "Navigation"
   },
   "pro": {
     "dashboard": {
@@ -282,20 +283,34 @@
       "noLeads": "No leads yet",
       "today": "Today",
       "thisWeek": "This week",
-      "thisMonth": "This month"
+      "thisMonth": "This month",
+      "subtitle": "Monitor bookings, professionals, leads, and live operations.",
+      "selectedPeriod": "Selected period",
+      "finishedServices": "Finished services",
+      "viewAll": "View all",
+      "goodMorning": "Good morning",
+      "goodAfternoon": "Good afternoon",
+      "goodEvening": "Good evening"
     },
     "bookings": {
       "title": "Bookings",
+      "subtitle": "Review every service request, assignment, status, and total from one clean queue.",
       "service": "Service",
       "company": "Company",
       "date": "Date",
       "total": "Total",
       "professional": "Professional",
       "status": "Status",
-      "unassigned": "Unassigned"
+      "unassigned": "Unassigned",
+      "records": "records",
+      "totalBookings": "Total bookings",
+      "activeWork": "Active work",
+      "totalRevenue": "Total revenue",
+      "noBookings": "No bookings yet"
     },
     "leads": {
       "title": "Leads",
+      "subtitle": "Track commercial pipeline activity and conversion status.",
       "businessName": "Business name",
       "contact": "Contact",
       "status": "Status",
@@ -305,20 +320,27 @@
       "contacted": "Contacted",
       "qualified": "Qualified",
       "converted": "Converted",
-      "disqualified": "Disqualified"
+      "disqualified": "Disqualified",
+      "records": "records",
+      "totalLeads": "Total leads",
+      "open": "Open leads"
     },
     "professionals": {
       "title": "Professionals",
+      "subtitle": "Manage professional availability, rate, service history, and coverage data.",
       "name": "Name",
       "rate": "Rate",
       "rating": "Rating",
       "services": "Services",
       "phone": "Phone",
       "available": "Available",
-      "unavailable": "Unavailable"
+      "unavailable": "Unavailable",
+      "records": "records",
+      "avgRate": "Average rate"
     },
     "map": {
       "title": "Live Map",
+      "subtitle": "See active professionals and mapped services in the field.",
       "autoRefresh": "Auto-refresh 30s",
       "professionals": "Professionals",
       "availableCount": "Available",
