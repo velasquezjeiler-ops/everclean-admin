@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'https://commercial-clean-setup.replit.app/api';
+const API = '/api';
 const STATUS_COLOR: Record<string,string> = { PENDING_ASSIGNMENT:'bg-amber-100 text-amber-700', CONFIRMED:'bg-blue-100 text-blue-700', IN_PROGRESS:'bg-purple-100 text-purple-700', COMPLETED:'bg-emerald-100 text-emerald-700', CANCELLED:'bg-red-100 text-red-700' };
 
 function serviceLabel(value?: string) {

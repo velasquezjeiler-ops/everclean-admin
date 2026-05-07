@@ -4,9 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap, MarkerF, useJsApiLoader } from '@react-google-maps/api';
 import { useMapRefresh } from './useMapRefresh';
 
-const API =
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://commercial-clean-setup.replit.app/api';
+const API = '/api';
 
 type Professional = {
   id: string;
