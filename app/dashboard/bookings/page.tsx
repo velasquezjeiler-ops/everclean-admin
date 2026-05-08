@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { getApiBase } from '../../../lib/apiBase';
 
-const API = '/api';
 const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', shadow:'0 2px 8px rgba(13,55,129,0.06)' };
 
 const STATUS_STYLE: Record<string,{bg:string,color:string}> = {
@@ -26,8 +26,8 @@ export default function BookingsPage() {
   useEffect(()=>{
     const token = localStorage.getItem('token')||'';
     Promise.all([
-      fetch(API+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()),
-      fetch(API+'/professionals',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()),
+      fetch(getApiBase()+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()),
+      fetch(getApiBase()+'/professionals',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()),
     ]).then(([b,p])=>{setBookings(b.data||[]);setPros(p.data||[]);setLoading(false);});
   },[]);
 
@@ -35,9 +35,9 @@ export default function BookingsPage() {
     const proId = selectedPro[bookingId];
     if (!proId) return;
     const token = localStorage.getItem('token')||'';
-    await fetch(API+`/bookings/${bookingId}/assign`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({professionalId:proId})});
+    await fetch(getApiBase()+`/bookings/${bookingId}/assign`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({professionalId:proId})});
     setAssigning(null);
-    const r = await fetch(API+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}});
+    const r = await fetch(getApiBase()+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}});
     const d = await r.json();
     setBookings(d.data||[]);
   }

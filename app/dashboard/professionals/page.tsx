@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { getApiBase } from '../../../lib/apiBase';
 
-const API = '/api';
 const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', shadow:'0 2px 8px rgba(13,55,129,0.06)' };
 
 export default function ProfessionalsPage() {
@@ -13,7 +13,7 @@ export default function ProfessionalsPage() {
 
   useEffect(()=>{
     const token = localStorage.getItem('token')||'';
-    fetch(API+'/professionals',{headers:{Authorization:'Bearer '+token}})
+    fetch(getApiBase()+'/professionals',{headers:{Authorization:'Bearer '+token}})
       .then(r=>r.json()).then(d=>{setPros(d.data||[]);setLoading(false);});
   },[]);
 

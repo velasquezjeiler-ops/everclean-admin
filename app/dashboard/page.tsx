@@ -2,8 +2,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '../../lib/i18n/useTranslation';
+import { getApiBase } from '../../lib/apiBase';
 
-const API = '/api';
 const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', greenDk:'#388E3C', bg:'#F5F7FA', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', shadow:'0 2px 8px rgba(13,55,129,0.06)' };
 type Period = 'today' | 'week' | 'month';
 
@@ -36,9 +36,9 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [bR, pR, lR] = await Promise.all([
-        fetch(API+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}}),
-        fetch(API+'/professionals',{headers:{Authorization:'Bearer '+token}}),
-        fetch(API+'/leads?limit=100',{headers:{Authorization:'Bearer '+token}}),
+        fetch(getApiBase()+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}}),
+        fetch(getApiBase()+'/professionals',{headers:{Authorization:'Bearer '+token}}),
+        fetch(getApiBase()+'/leads?limit=100',{headers:{Authorization:'Bearer '+token}}),
       ]);
       const [bookings,pros,leads] = await Promise.all([bR.json(),pR.json(),lR.json()]);
       const allB = bookings.data||[]; const allP = pros.data||[]; const allL = leads.data||[];

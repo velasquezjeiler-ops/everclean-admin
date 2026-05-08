@@ -1,9 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { getApiBase } from '../../../lib/apiBase';
 
-const API = '/api';
 const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', shadow:'0 2px 8px rgba(13,55,129,0.06)' };
+
+function firstText(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
 
 export default function LeadsPage() {
   const { t } = useTranslation();
@@ -12,7 +19,7 @@ export default function LeadsPage() {
 
   useEffect(()=>{
     const token = localStorage.getItem('token')||'';
-    fetch(API+'/leads?limit=100',{headers:{Authorization:'Bearer '+token}})
+    fetch(getApiBase()+'/leads?limit=100',{headers:{Authorization:'Bearer '+token}})
       .then(r=>r.json()).then(d=>{setLeads(d.data||[]);setLoading(false);});
   },[]);
 
@@ -34,7 +41,7 @@ export default function LeadsPage() {
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
         {[
           {label:t('admin.leads.totalLeads'),value:leads.length,color:C.navy},
-          {label:t('admin.leads.open'),value:open,color:'#F59E0B'},
+          {label:t('admin.leads.openLeads'),value:open,color:'#F59E0B'},
           {label:t('admin.leads.converted'),value:converted,color:C.green},
         ].map(s=>(
           <div key={s.label} style={{...card,padding:24}}>
@@ -45,24 +52,32 @@ export default function LeadsPage() {
       </div>
 
       {loading ? (
-        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,color:C.muted}}>Loading…</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,color:C.muted}}>Loading...</div>
       ) : (
         <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14}}>
-          {leads.map(l=>(
-            <div key={l.id} style={{...card,padding:20}}>
-              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
-                <div style={{minWidth:0}}>
-                  <div style={{fontSize:15,fontWeight:600,color:C.ink,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.company_name||l.contact_name||'Lead'}</div>
-                  <div style={{fontSize:12,color:C.muted,marginBottom:10}}>{l.email||l.contact_email||'—'} · {l.phone||l.contact_phone||'—'}</div>
-                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                    <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{l.source||'WEB'}</span>
-                    <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{l.created_at?new Date(l.created_at).toLocaleDateString():''}</span>
+          {leads.map(l=>{
+            const email = firstText(l.contact_email, l.contactEmail, l.email, l.contact?.email);
+            const phone = firstText(l.contact_phone, l.contactPhone, l.phone, l.contact?.phone);
+            const contactLine = [email, phone].filter(Boolean).join(' · ') || '-';
+            const company = firstText(l.company_name, l.companyName, l.business_name, l.businessName, l.contact_name, l.contactName) || 'Lead';
+            const source = firstText(l.source_channel, l.sourceChannel, l.source) || 'WEB';
+
+            return (
+              <div key={l.id} style={{...card,padding:20}}>
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
+                  <div style={{minWidth:0}}>
+                    <div style={{fontSize:15,fontWeight:600,color:C.ink,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{company}</div>
+                    <div style={{fontSize:12,color:C.muted,marginBottom:10}}>{contactLine}</div>
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                      <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{source}</span>
+                      <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{l.created_at?new Date(l.created_at).toLocaleDateString():''}</span>
+                    </div>
                   </div>
+                  <span style={{flexShrink:0,borderRadius:9999,padding:'4px 12px',fontSize:11,fontWeight:700,background:'#FEF3C7',color:'#92400E'}}>{l.status||'NEW'}</span>
                 </div>
-                <span style={{flexShrink:0,borderRadius:9999,padding:'4px 12px',fontSize:11,fontWeight:700,background:'#FEF3C7',color:'#92400E'}}>{l.status||'NEW'}</span>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {!leads.length&&<div style={{gridColumn:'1/-1',padding:'60px 0',textAlign:'center',color:C.muted,fontSize:14}}>{t('admin.dashboard.noLeads')}</div>}
         </div>
       )}

@@ -320,7 +320,8 @@
       "converted": "Convertido",
       "records": "registros",
       "totalLeads": "Prospectos totales",
-      "open": "Prospectos abiertos"
+      "open": "Prospectos abiertos",
+      "openLeads": "Prospectos abiertos"
     },
     "professionals": {
       "title": "Profesionales",

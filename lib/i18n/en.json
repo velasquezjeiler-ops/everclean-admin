@@ -323,7 +323,8 @@
       "disqualified": "Disqualified",
       "records": "records",
       "totalLeads": "Total leads",
-      "open": "Open leads"
+      "open": "Open leads",
+      "openLeads": "Open leads"
     },
     "professionals": {
       "title": "Professionals",

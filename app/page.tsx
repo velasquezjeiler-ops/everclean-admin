@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { getLoginBases, rememberApiBase } from '../lib/apiBase';
 
 const C = {
   navy: '#0D3781', navyDark: '#081f4a',
@@ -16,6 +17,21 @@ const features = [
   { icon: '👥', label: 'Team', detail: 'Full team management' },
 ];
 
+async function readResponse(res: Response) {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      error: text.includes('Authentication Required')
+        ? 'Vercel protection blocked the API route'
+        : 'Unexpected API response',
+      html: true,
+    };
+  }
+}
+
 export default function AdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -27,18 +43,40 @@ export default function AdminLogin() {
     if (loading) return;
     setError(''); setLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Invalid credentials');
-      if (data.role !== 'ADMIN') throw new Error('Admin access required');
-      localStorage.setItem('token', data.accessToken);
-      localStorage.setItem('refreshToken', data.refreshToken || '');
-      localStorage.setItem('role', data.role);
-      router.push('/dashboard');
+      const normalizedEmail = email.trim().toLowerCase();
+      const loginBases = getLoginBases();
+      let lastError = 'Unable to reach the API. Check the backend deployment URL.';
+
+      for (let index = 0; index < loginBases.length; index += 1) {
+        const base = loginBases[index];
+        try {
+          const res = await fetch(base + '/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: normalizedEmail, password }),
+          });
+          const data = await readResponse(res);
+          if (!res.ok) {
+            lastError = data.error || 'Invalid credentials';
+            const canRetryDirect = base === '/api' && (res.status >= 500 || data.html || /reach|backend|vercel/i.test(lastError));
+            if (canRetryDirect) continue;
+            throw new Error(lastError);
+          }
+          if (data.role !== 'ADMIN') throw new Error('Admin access required');
+          localStorage.setItem('token', data.accessToken);
+          localStorage.setItem('refreshToken', data.refreshToken || '');
+          localStorage.setItem('role', data.role);
+          rememberApiBase(base);
+          router.push('/dashboard');
+          return;
+        } catch (err: any) {
+          lastError = err?.message || lastError;
+          if (index < loginBases.length - 1) continue;
+          throw new Error(lastError === 'Failed to fetch'
+            ? 'Unable to reach the API. Check the backend deployment URL.'
+            : lastError);
+        }
+      }
     } catch (e: any) {
       setError(e?.message || 'Unable to sign in');
     } finally { setLoading(false); }

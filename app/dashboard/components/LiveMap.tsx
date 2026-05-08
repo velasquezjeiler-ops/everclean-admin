@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap, MarkerF, useJsApiLoader } from '@react-google-maps/api';
 import { useMapRefresh } from './useMapRefresh';
-
-const API = '/api';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
+import { getApiBase } from '../../../lib/apiBase';
 
 type Professional = {
   id: string;
@@ -147,6 +147,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 }
 
 export default function LiveMap() {
+  const { t } = useTranslation();
   const mapRef = useRef<google.maps.Map | null>(null);
   const mapWrapperRef = useRef<HTMLDivElement | null>(null);
   const streetViewContainerRef = useRef<HTMLDivElement | null>(null);
@@ -182,13 +183,13 @@ export default function LiveMap() {
   };
 
   const legendItems = [
-    { color: '#10B981', label: 'Pro disponible', badge: 'P' },
-    { color: '#4B5563', label: 'Pro no disponible', badge: 'P' },
-    { color: STATUS_COLORS.PENDING_ASSIGNMENT, label: 'Servicio pendiente', badge: 'S' },
-    { color: STATUS_COLORS.CONFIRMED, label: 'Servicio confirmado', badge: 'S' },
-    { color: STATUS_COLORS.IN_PROGRESS, label: 'Servicio en curso', badge: 'S' },
-    { color: STATUS_COLORS.COMPLETED, label: 'Servicio completado', badge: 'S' },
-    { color: STATUS_COLORS.CANCELLED, label: 'Servicio cancelado', badge: 'S' },
+    { color: '#10B981', label: t('map.proAvailable'), badge: 'P' },
+    { color: '#4B5563', label: t('map.proUnavailable'), badge: 'P' },
+    { color: STATUS_COLORS.PENDING_ASSIGNMENT, label: t('map.servicePending'), badge: 'S' },
+    { color: STATUS_COLORS.CONFIRMED, label: t('map.serviceConfirmed'), badge: 'S' },
+    { color: STATUS_COLORS.IN_PROGRESS, label: t('map.serviceInProgress'), badge: 'S' },
+    { color: STATUS_COLORS.COMPLETED, label: t('map.serviceCompleted'), badge: 'S' },
+    { color: STATUS_COLORS.CANCELLED, label: t('map.serviceCancelled'), badge: 'S' },
   ];
 
   const filteredPins = useMemo(
@@ -285,8 +286,8 @@ export default function LiveMap() {
       setLoading(true);
 
       const [prosRes, bookingsRes] = await Promise.all([
-        fetch(`${API}/professionals`, { headers }),
-        fetch(`${API}/bookings?limit=500`, { headers }),
+        fetch(`${getApiBase()}/professionals`, { headers }),
+        fetch(`${getApiBase()}/bookings?limit=500`, { headers }),
       ]);
 
       const prosJson = await prosRes.json();
@@ -687,6 +688,59 @@ export default function LiveMap() {
     );
   };
 
+  const renderLegend = () => (
+    <div style={{ borderTop: '1px solid #e5e7eb', padding: '14px 16px 16px' }}>
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 900,
+          color: '#6B7280',
+          marginBottom: 10,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+        }}
+      >
+        {t('map.legend')}
+      </div>
+      <div style={{ display: 'grid', gap: 8 }}>
+        {legendItems.map((item) => (
+          <div
+            key={item.label}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 12,
+              color: '#374151',
+              fontWeight: 600,
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: item.color,
+                border: '2px solid white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: 10,
+                fontWeight: 800,
+                flexShrink: 0,
+              }}
+            >
+              {item.badge}
+            </div>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
@@ -942,27 +996,9 @@ export default function LiveMap() {
             {selectedPin ? 'Detalle del pin' : 'Información'}
           </div>
 
-          <div style={{ overflowY: 'auto', maxHeight: 680 }}>{renderInfo()}</div>
-
-          {/* Leyenda */}
-          <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Leyenda</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-              {[
-                { color: '#10B981', label: 'Pro disponible', badge: 'P' },
-                { color: '#4B5563', label: 'Pro no disponible', badge: 'P' },
-                { color: '#F59E0B', label: 'Servicio pendiente', badge: 'S' },
-                { color: '#2563EB', label: 'Servicio confirmado', badge: 'S' },
-                { color: '#7C3AED', label: 'Servicio en curso', badge: 'S' },
-                { color: '#059669', label: 'Servicio completado', badge: 'S' },
-                { color: '#DC2626', label: 'Servicio cancelado', badge: 'S' },
-              ].map(item => (
-                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{item.badge}</div>
-                  <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{item.label}</span>
-                </div>
-              ))}
-            </div>
+          <div style={{ overflowY: 'auto', maxHeight: 680 }}>
+            {renderInfo()}
+            {renderLegend()}
           </div>
 
           {selectedPin && (
