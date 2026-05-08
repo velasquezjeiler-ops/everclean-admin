@@ -857,79 +857,6 @@ export default function LiveMap() {
             </button>
           </div>
 
-          <div
-            style={{
-              position: 'absolute',
-              left: 14,
-              bottom: 14,
-              zIndex: 30,
-              background: 'rgba(255,255,255,0.96)',
-              border: '1px solid #E5E7EB',
-              borderRadius: 14,
-              padding: '10px 12px',
-              boxShadow: '0 10px 24px rgba(0,0,0,0.12)',
-              minWidth: 250,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 900,
-                color: '#374151',
-                marginBottom: 8,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-              }}
-            >
-              Leyenda
-            </div>
-
-            <div style={{ display: 'grid', gap: 6 }}>
-              {[
-                { color: '#10B981', label: 'Pro disponible', badge: 'P' },
-                { color: '#4B5563', label: 'Pro no disponible', badge: 'P' },
-                { color: '#F59E0B', label: 'Servicio pendiente', badge: 'S' },
-                { color: '#2563EB', label: 'Servicio confirmado', badge: 'S' },
-                { color: '#7C3AED', label: 'Servicio en curso', badge: 'S' },
-                { color: '#059669', label: 'Servicio completado', badge: 'S' },
-                { color: '#DC2626', label: 'Servicio cancelado', badge: 'S' },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    fontSize: 12,
-                    color: '#374151',
-                    fontWeight: 600,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: '50%',
-                      background: item.color,
-                      border: '2px solid white',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'white',
-                      fontSize: 11,
-                      fontWeight: 800,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.badge}
-                  </div>
-                  <span>{item.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <GoogleMap
               mapContainerStyle={{ width: '100%', height: '100%' }}
               center={DEFAULT_CENTER}
@@ -1016,6 +943,27 @@ export default function LiveMap() {
           </div>
 
           <div style={{ overflowY: 'auto', maxHeight: 680 }}>{renderInfo()}</div>
+
+          {/* Leyenda */}
+          <div style={{ padding: '16px', borderTop: '1px solid #e5e7eb' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Leyenda</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {[
+                { color: '#10B981', label: 'Pro disponible', badge: 'P' },
+                { color: '#4B5563', label: 'Pro no disponible', badge: 'P' },
+                { color: '#F59E0B', label: 'Servicio pendiente', badge: 'S' },
+                { color: '#2563EB', label: 'Servicio confirmado', badge: 'S' },
+                { color: '#7C3AED', label: 'Servicio en curso', badge: 'S' },
+                { color: '#059669', label: 'Servicio completado', badge: 'S' },
+                { color: '#DC2626', label: 'Servicio cancelado', badge: 'S' },
+              ].map(item => (
+                <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>{item.badge}</div>
+                  <span style={{ fontSize: 12, color: '#374151', fontWeight: 500 }}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {selectedPin && (
             <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>

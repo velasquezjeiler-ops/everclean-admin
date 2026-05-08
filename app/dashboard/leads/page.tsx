@@ -34,7 +34,7 @@ export default function LeadsPage() {
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
         {[
           {label:t('admin.leads.totalLeads'),value:leads.length,color:C.navy},
-          {label:t('admin.leads.openLeads'),value:open,color:'#F59E0B'},
+          {label:t('admin.leads.open'),value:open,color:'#F59E0B'},
           {label:t('admin.leads.converted'),value:converted,color:C.green},
         ].map(s=>(
           <div key={s.label} style={{...card,padding:24}}>
@@ -53,7 +53,7 @@ export default function LeadsPage() {
               <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
                 <div style={{minWidth:0}}>
                   <div style={{fontSize:15,fontWeight:600,color:C.ink,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.company_name||l.contact_name||'Lead'}</div>
-                  <div style={{fontSize:12,color:C.muted,marginBottom:10}}>{l.email||'—'} · {l.phone||'—'}</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:10}}>{l.email||l.contact_email||'—'} · {l.phone||l.contact_phone||'—'}</div>
                   <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                     <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{l.source||'WEB'}</span>
                     <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{l.created_at?new Date(l.created_at).toLocaleDateString():''}</span>
