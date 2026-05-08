@@ -1,9 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_API =
-  process.env.BACKEND_API_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://commercial-clean-setup.replit.app/api';
+// Ordered list — first backend that responds wins
+const BACKENDS = [
+  process.env.BACKEND_API_URL,
+  process.env.NEXT_PUBLIC_API_URL,
+  'https://commercial-clean-setup--velasquezjeiler.replit.app/api',
+  'https://commercial-clean-setup.replit.app/api',
+].filter(Boolean) as string[];
+
+async function tryBackend(
+  base: string,
+  path: string,
+  search: string,
+  method: string,
+  headers: Headers,
+  body: ArrayBuffer | undefined
+): Promise<Response | null> {
+  const target = new URL(`${base.replace(/\/$/, '')}/${path}`);
+  target.search = search;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    return await fetch(target, { method, headers, body, cache: 'no-store', signal: controller.signal });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 async function proxyRequest(
   request: NextRequest,
@@ -11,8 +35,7 @@ async function proxyRequest(
 ) {
   const params = await context.params;
   const path = (params.path || []).join('/');
-  const target = new URL(`${BACKEND_API.replace(/\/$/, '')}/${path}`);
-  target.search = request.nextUrl.search;
+  const search = request.nextUrl.search;
 
   const headers = new Headers(request.headers);
   headers.delete('host');
@@ -21,35 +44,26 @@ async function proxyRequest(
   const method = request.method;
   const hasBody = !['GET', 'HEAD'].includes(method);
   const body = hasBody ? await request.arrayBuffer() : undefined;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
 
-  try {
-    const response = await fetch(target, {
-      method,
-      headers,
-      body,
-      cache: 'no-store',
-      signal: controller.signal,
-    });
-
-    const responseHeaders = new Headers(response.headers);
-    responseHeaders.delete('content-encoding');
-    responseHeaders.delete('transfer-encoding');
-
-    return new NextResponse(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    });
-  } catch {
-    return NextResponse.json(
-      { error: 'Unable to reach backend API' },
-      { status: 502 }
-    );
-  } finally {
-    clearTimeout(timeout);
+  for (const base of BACKENDS) {
+    const response = await tryBackend(base, path, search, method, headers, body);
+    if (response) {
+      const responseHeaders = new Headers(response.headers);
+      responseHeaders.delete('content-encoding');
+      responseHeaders.delete('transfer-encoding');
+      responseHeaders.set('x-backend', base);
+      return new NextResponse(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
+    }
   }
+
+  return NextResponse.json(
+    { error: 'Backend unavailable. Check that Replit is running.' },
+    { status: 502 }
+  );
 }
 
 export const GET = proxyRequest;
