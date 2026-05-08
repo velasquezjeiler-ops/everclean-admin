@@ -3,28 +3,12 @@ import { useState, useEffect, useCallback } from 'react';
 
 import en from './en.json';
 import es from './es.json';
-import zh from './zh.json';
-import tl from './tl.json';
-import vi from './vi.json';
-import ar from './ar.json';
-import fr from './fr.json';
-import ko from './ko.json';
-import ru from './ru.json';
-import pt from './pt.json';
 
-const LANGS: Record<string, any> = { en, es, zh, tl, vi, ar, fr, ko, ru, pt };
+const LANGS: Record<string, any> = { en, es };
 
 export const LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
   { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'zh', label: '中文', flag: '🇨🇳' },
-  { code: 'tl', label: 'Tagalog', flag: '🇵🇭' },
-  { code: 'vi', label: 'Tiếng Việt', flag: '🇻🇳' },
-  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'ru', label: 'Русский', flag: '🇷🇺' },
-  { code: 'pt', label: 'Português', flag: '🇧🇷' },
 ];
 
 function getNestedValue(obj: any, path: string): string {
