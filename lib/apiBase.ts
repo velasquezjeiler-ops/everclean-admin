@@ -16,5 +16,5 @@ export function rememberApiBase(base: string) {
 
 export function getLoginBases() {
   const configured = cleanBase(process.env.NEXT_PUBLIC_API_URL);
-  return Array.from(new Set(['/api', configured || FALLBACK_API_BASE]));
+  return Array.from(new Set(['/api', configured, FALLBACK_API_BASE].filter(Boolean)));
 }

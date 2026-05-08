@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Ordered list — first backend that responds wins
-const BACKENDS = [
+const BACKENDS = Array.from(new Set([
   process.env.BACKEND_API_URL,
   process.env.NEXT_PUBLIC_API_URL,
   'https://commercial-clean-setup.replit.app/api',
   'https://commercial-clean-setup--velasquezjeiler.replit.app/api',
-].filter(Boolean) as string[];
+].filter(Boolean).map(value => value!.replace(/\/$/, ''))));
 
 async function tryBackend(
   base: string,
@@ -16,17 +15,30 @@ async function tryBackend(
   headers: Headers,
   body: ArrayBuffer | undefined
 ): Promise<Response | null> {
-  const target = new URL(`${base.replace(/\/$/, '')}/${path}`);
+  const target = new URL(`${base}/${path}`);
   target.search = search;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
+
   try {
-    return await fetch(target, { method, headers, body, cache: 'no-store', signal: controller.signal });
+    return await fetch(target, {
+      method,
+      headers,
+      body,
+      cache: 'no-store',
+      signal: controller.signal,
+    });
   } catch {
     return null;
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function shouldTryNextBackend(response: Response) {
+  const contentType = response.headers.get('content-type') || '';
+  const htmlResponse = contentType.includes('text/html');
+  return htmlResponse && (response.status === 404 || response.status >= 500);
 }
 
 async function proxyRequest(
@@ -47,17 +59,19 @@ async function proxyRequest(
 
   for (const base of BACKENDS) {
     const response = await tryBackend(base, path, search, method, headers, body);
-    if (response) {
-      const responseHeaders = new Headers(response.headers);
-      responseHeaders.delete('content-encoding');
-      responseHeaders.delete('transfer-encoding');
-      responseHeaders.set('x-backend', base);
-      return new NextResponse(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: responseHeaders,
-      });
-    }
+    if (!response) continue;
+    if (shouldTryNextBackend(response)) continue;
+
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.delete('content-encoding');
+    responseHeaders.delete('transfer-encoding');
+    responseHeaders.set('x-backend', base);
+
+    return new NextResponse(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders,
+    });
   }
 
   return NextResponse.json(
