@@ -4,8 +4,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useTranslation, LANGUAGE_OPTIONS } from '../../lib/i18n/useTranslation';
+import type { ReactElement } from 'react';
 
-const NAV_ICONS: Record<string, JSX.Element> = {
+const NAV_ICONS: Record<string, ReactElement> = {
   '/dashboard': (
     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
