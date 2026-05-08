@@ -36,6 +36,12 @@ const NAV_ICONS: Record<string, ReactElement> = {
       <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
     </svg>
   ),
+  '/dashboard/financials': (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <line x1="12" y1="1" x2="12" y2="23"/>
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  ),
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -63,6 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: '/dashboard/bookings', label: t('sidebar.bookings') },
     { href: '/dashboard/professionals', label: t('sidebar.professionals') },
     { href: '/dashboard/map', label: t('sidebar.liveMap') },
+    { href: '/dashboard/financials', label: t('sidebar.financials') },
   ];
 
   const currentLang = LANGUAGE_OPTIONS.find(l => l.code === lang) || LANGUAGE_OPTIONS[0];
@@ -139,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             <span style={{ fontSize: 16 }}>{currentLang.flag}</span>
             <span style={{ flex: 1, textAlign: 'left', fontSize: 12 }}>{currentLang.label}</span>
-            <span style={{ fontSize: 10, opacity: 0.5 }}>{langOpen ? '▲' : '▼'}</span>
+            <span style={{ fontSize: 10, opacity: 0.5 }}>{langOpen ? 'Up' : 'Down'}</span>
           </button>
           {langOpen && (
             <div style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, background: '#1a2744', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, overflow: 'hidden', maxHeight: 200, overflowY: 'auto', zIndex: 100, marginBottom: 4 }}>
@@ -151,7 +158,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <span>{opt.flag}</span>
                   <span>{opt.label}</span>
-                  {lang === opt.code && <span style={{ marginLeft: 'auto' }}>✓</span>}
+                  {lang === opt.code && <span style={{ marginLeft: 'auto' }}>OK</span>}
                 </button>
               ))}
             </div>
@@ -190,7 +197,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span style={{ fontWeight: 700, color: '#fff', fontSize: 16 }}>Ever<span style={{ color: '#4CAF50' }}>Clean</span></span>
         </div>
         <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: 'rgba(255,255,255,0.1)', border: 0, color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
-          {menuOpen ? '✕' : 'Menu'}
+          {menuOpen ? 'Close' : 'Menu'}
         </button>
       </header>
 

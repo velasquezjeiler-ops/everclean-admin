@@ -60,6 +60,7 @@
     "bookings": "Reservas",
     "professionals": "Profesionales",
     "liveMap": "Mapa en Vivo",
+    "financials": "Finanzas",
     "navigation": "Navegacion"
   },
   "pro": {
@@ -351,6 +352,36 @@
       "availableCount": "Disponibles",
       "servicesOnMap": "Servicios en mapa",
       "inProgress": "En curso"
+    },
+    "financials": {
+      "kicker": "Control financiero",
+      "title": "Finanzas",
+      "subtitle": "Controla ingresos del cliente, ganancias de la app, pagos a profesionales y balance de Stripe desde admin.",
+      "totalRevenue": "Ingresos totales",
+      "totalBookings": "{count} reservas",
+      "appEarnings": "Ganancia app",
+      "platformFees": "Fees de plataforma",
+      "proPayouts": "Pagos a pros",
+      "professionalShare": "Parte del profesional",
+      "pendingPayouts": "Pagos pendientes",
+      "pendingCount": "{count} pendientes",
+      "avgMargin": "Margen promedio",
+      "marginHelp": "Margen de fee app",
+      "stripeAvailable": "Stripe disponible",
+      "stripePending": "Stripe pendiente",
+      "stripeBalance": "Balance Stripe",
+      "openStripe": "Abrir Stripe Dashboard",
+      "byState": "Ingresos por estado",
+      "byStateHelp": "Desglose que conecta reservas, pagos y fees de EverClean.",
+      "state": "Estado",
+      "bookings": "Reservas",
+      "revenue": "Ingresos",
+      "payouts": "Pagos",
+      "fees": "Fees app",
+      "stripeControl": "Control Stripe",
+      "stripeHelp": "Abre el dashboard de Stripe para manejar pagos, balances, transferencias, disputas y configuracion de cuenta.",
+      "noData": "Aun no hay registros financieros",
+      "error": "No se pudo cargar la data financiera. Revisa la conexion del backend."
     }
   }
 }

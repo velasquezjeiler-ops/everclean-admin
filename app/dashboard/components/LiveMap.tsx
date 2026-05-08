@@ -2,19 +2,21 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GoogleMap, MarkerF, useJsApiLoader } from '@react-google-maps/api';
-import { useMapRefresh } from './useMapRefresh';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { getApiBase } from '../../../lib/apiBase';
+import { useMapRefresh } from './useMapRefresh';
 
 type Professional = {
   id: string;
   full_name?: string;
   fullName?: string;
+  phone?: string;
+  city?: string;
+  state?: string;
   lat?: string | number | null;
   lng?: string | number | null;
   is_available?: boolean;
   isAvailable?: boolean;
-  phone?: string;
 };
 
 type Booking = {
@@ -24,8 +26,10 @@ type Booking = {
   state?: string;
   zip?: string;
   status: string;
+  scheduled_at?: string;
   scheduledAt?: string;
   sqft?: number;
+  service_type?: string;
   company?: { name?: string; contactName?: string };
   professionals?: Array<{ professional?: { fullName?: string } }>;
   lat?: number | string | null;
@@ -41,6 +45,7 @@ type PinItem = {
 };
 
 const DEFAULT_CENTER = { lat: 40.7357, lng: -74.1724 };
+const C = { navy:'#0D3781', green:'#4CAF50', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', soft:'#F8FAFC' };
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING_ASSIGNMENT: '#F59E0B',
@@ -48,16 +53,6 @@ const STATUS_COLORS: Record<string, string> = {
   IN_PROGRESS: '#6D28D9',
   COMPLETED: '#047857',
   CANCELLED: '#B91C1C',
-  INVITED: '#4B5563',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  PENDING_ASSIGNMENT: 'Pendiente',
-  CONFIRMED: 'Confirmado',
-  IN_PROGRESS: 'En curso',
-  COMPLETED: 'Completado',
-  CANCELLED: 'Cancelado',
-  INVITED: 'Invitado',
 };
 
 const geocodeCache: Record<string, { lat: number; lng: number }> = {};
@@ -67,69 +62,26 @@ function toNumber(value: unknown): number | null {
   return Number.isFinite(n) && n !== 0 ? n : null;
 }
 
-function buildFullAddress(b: Booking) {
-  return [b.address, b.city, b.state, b.zip].filter(Boolean).join(', ');
+function buildAddress(booking: Booking) {
+  return [booking.address, booking.city, booking.state, booking.zip].filter(Boolean).join(', ');
 }
 
-function openGoogleMapsUrl(lat: number, lng: number) {
+function serviceLabel(value?: string) {
+  return (value || 'Service').replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, char => char.toUpperCase());
+}
+
+function mapsUrl(lat: number, lng: number) {
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-}
-
-function openStreetViewUrl(lat: number, lng: number) {
-  return `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
-}
-
-function getMarkerIcon(pin: PinItem, selected: boolean): google.maps.Icon {
-  const isBooking = pin.type === 'booking';
-  const booking = pin.data as Booking;
-  const professional = pin.data as Professional;
-
-  const baseColor = isBooking
-    ? STATUS_COLORS[booking.status] || '#4B5563'
-    : ((professional.is_available ?? professional.isAvailable) ? '#10B981' : '#374151');
-
-  const label = pin.type === 'professional' ? 'P' : 'S';
-  const size = selected ? 62 : 50;
-  const fontSize = selected ? 24 : 18;
-  const ring = selected ? '#111827' : '#FFFFFF';
-  const strokeWidth = selected ? 6 : 4;
-
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 80 80">
-      <defs>
-        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-          <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="rgba(0,0,0,0.30)"/>
-        </filter>
-      </defs>
-      <g filter="url(#shadow)">
-        <circle cx="40" cy="40" r="${selected ? 26 : 22}" fill="${baseColor}" stroke="${ring}" stroke-width="${strokeWidth}" />
-      </g>
-      <text x="40" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="800" fill="#FFFFFF">${label}</text>
-    </svg>
-  `.trim();
-
-  return {
-    url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-    scaledSize: new google.maps.Size(size, size),
-    anchor: new google.maps.Point(size / 2, size / 2),
-  };
-}
-
-function getMarkerLabel(_pin: PinItem): google.maps.MarkerLabel | undefined {
-  return undefined;
 }
 
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null;
-
   const key = address.toLowerCase().trim();
   if (geocodeCache[key]) return geocodeCache[key];
-
   const googleRef = (window as any).google;
   if (!googleRef?.maps?.Geocoder) return null;
 
   const geocoder = new googleRef.maps.Geocoder();
-
   return new Promise(resolve => {
     geocoder.geocode({ address }, (results: any, status: string) => {
       if (status === 'OK' && results?.[0]?.geometry?.location) {
@@ -139,9 +91,9 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
         };
         geocodeCache[key] = result;
         resolve(result);
-      } else {
-        resolve(null);
+        return;
       }
+      resolve(null);
     });
   });
 }
@@ -149,38 +101,118 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 export default function LiveMap() {
   const { t } = useTranslation();
   const mapRef = useRef<google.maps.Map | null>(null);
-  const mapWrapperRef = useRef<HTMLDivElement | null>(null);
-  const streetViewContainerRef = useRef<HTMLDivElement | null>(null);
-  const streetViewPanoramaRef = useRef<google.maps.StreetViewPanorama | null>(null);
-
   const [loading, setLoading] = useState(true);
   const [pins, setPins] = useState<PinItem[]>([]);
   const [selectedPin, setSelectedPin] = useState<PinItem | null>(null);
-  const [streetViewAvailable, setStreetViewAvailable] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'professional' | 'booking'>('all');
-  const [stats, setStats] = useState({
-    pros: 0,
-    available: 0,
-    bookings: 0,
-    inProgress: 0,
-  });
+  const [stats, setStats] = useState({ pros: 0, available: 0, bookings: 0, inProgress: 0 });
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
-
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'everclean-google-map',
     googleMapsApiKey: apiKey,
   });
 
-  const mapOptions: google.maps.MapOptions = {
-    gestureHandling: 'greedy',
-    scrollwheel: true,
-    clickableIcons: false,
-    streetViewControl: true,
-    mapTypeControl: true,
-    fullscreenControl: true,
-    zoomControl: true,
-  };
+  const filteredPins = useMemo(
+    () => pins.filter(pin => filterType === 'all' || pin.type === filterType),
+    [pins, filterType]
+  );
+
+  const fitToPins = useCallback((items: PinItem[]) => {
+    if (!mapRef.current || !(window as any).google || items.length === 0) return;
+    if (items.length === 1) {
+      mapRef.current.panTo({ lat: items[0].lat, lng: items[0].lng });
+      mapRef.current.setZoom(14);
+      return;
+    }
+    const bounds = new (window as any).google.maps.LatLngBounds();
+    items.forEach(item => bounds.extend({ lat: item.lat, lng: item.lng }));
+    mapRef.current.fitBounds(bounds);
+  }, []);
+
+  const focusPin = useCallback((pin: PinItem | null, zoom = 15) => {
+    if (!pin || !mapRef.current) return;
+    mapRef.current.panTo({ lat: pin.lat, lng: pin.lng });
+    mapRef.current.setZoom(zoom);
+  }, []);
+
+  const zoomIn = useCallback(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setZoom(Math.min(20, (mapRef.current.getZoom() || 10) + 1));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setZoom(Math.max(4, (mapRef.current.getZoom() || 10) - 1));
+  }, []);
+
+  const loadData = useCallback(async () => {
+    if (!isLoaded || !(window as any).google) return;
+    const token = localStorage.getItem('token') || '';
+    const headers = { Authorization: `Bearer ${token}` };
+
+    try {
+      setLoading(true);
+      const [prosRes, bookingsRes] = await Promise.all([
+        fetch(`${getApiBase()}/professionals`, { headers }),
+        fetch(`${getApiBase()}/bookings?limit=500`, { headers }),
+      ]);
+      const [prosJson, bookingsJson] = await Promise.all([prosRes.json(), bookingsRes.json()]);
+      const professionals: Professional[] = Array.isArray(prosJson) ? prosJson : prosJson.data || [];
+      const bookings: Booking[] = Array.isArray(bookingsJson) ? bookingsJson : bookingsJson.data || [];
+      const nextPins: PinItem[] = [];
+      let available = 0;
+      let inProgress = 0;
+      let mappedBookings = 0;
+
+      for (const pro of professionals) {
+        const lat = toNumber(pro.lat);
+        const lng = toNumber(pro.lng);
+        if (lat === null || lng === null) continue;
+        if (pro.is_available ?? pro.isAvailable) available += 1;
+        nextPins.push({ id: `pro-${pro.id}`, lat, lng, type: 'professional', data: pro });
+      }
+
+      for (const booking of bookings) {
+        if (booking.status === 'IN_PROGRESS') inProgress += 1;
+        let coords: { lat: number; lng: number } | null = null;
+        const lat = toNumber(booking.lat);
+        const lng = toNumber(booking.lng);
+        if (lat !== null && lng !== null) coords = { lat, lng };
+        else coords = await geocodeAddress(buildAddress(booking));
+        if (!coords) continue;
+        mappedBookings += 1;
+        nextPins.push({ id: `booking-${booking.id}`, lat: coords.lat, lng: coords.lng, type: 'booking', data: booking });
+      }
+
+      setPins(nextPins);
+      setStats({ pros: professionals.length, available, bookings: mappedBookings, inProgress });
+      if (!selectedPin) window.setTimeout(() => fitToPins(nextPins), 0);
+    } catch (error) {
+      console.error('Error loading map data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [fitToPins, isLoaded, selectedPin]);
+
+  useEffect(() => { if (isLoaded) loadData(); }, [isLoaded, loadData]);
+  useMapRefresh(() => { if (isLoaded) loadData(); }, 30000);
+  useEffect(() => { if (!selectedPin) fitToPins(filteredPins); }, [filteredPins, fitToPins, selectedPin]);
+
+  if (loadError) {
+    return <div style={emptyState}>Error loading Google Maps</div>;
+  }
+
+  if (!apiKey) {
+    return (
+      <div style={emptyState}>
+        <div>
+          <h3 style={{ margin: '0 0 8px', color: C.ink }}>Mapa no configurado</h3>
+          <p style={{ margin: 0, color: C.muted }}>Agrega NEXT_PUBLIC_GOOGLE_MAPS_API_KEY en Vercel y redeploy.</p>
+        </div>
+      </div>
+    );
+  }
 
   const legendItems = [
     { color: '#10B981', label: t('map.proAvailable'), badge: 'P' },
@@ -192,836 +224,200 @@ export default function LiveMap() {
     { color: STATUS_COLORS.CANCELLED, label: t('map.serviceCancelled'), badge: 'S' },
   ];
 
-  const filteredPins = useMemo(
-    () => pins.filter(pin => filterType === 'all' || pin.type === filterType),
-    [pins, filterType]
-  );
-
-  const fitToPins = useCallback((items: PinItem[]) => {
-    if (!mapRef.current || !(window as any).google || items.length === 0) return;
-
-    if (items.length === 1) {
-      mapRef.current.panTo({ lat: items[0].lat, lng: items[0].lng });
-      mapRef.current.setZoom(14);
-      return;
-    }
-
-    const bounds = new (window as any).google.maps.LatLngBounds();
-    items.forEach(item => bounds.extend({ lat: item.lat, lng: item.lng }));
-    mapRef.current.fitBounds(bounds);
-  }, []);
-
-  const focusPin = useCallback((pin: PinItem | null, zoom = 17) => {
-    if (!pin || !mapRef.current) return;
-    mapRef.current.panTo({ lat: pin.lat, lng: pin.lng });
-    mapRef.current.setZoom(zoom);
-  }, []);
-
-  const handleWheelZoom = useCallback((event: WheelEvent) => {
-    if (!mapRef.current) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    if ('stopImmediatePropagation' in event) {
-      (event as any).stopImmediatePropagation?.();
-    }
-
-    const currentZoom = mapRef.current.getZoom() ?? 11;
-    const direction = event.deltaY < 0 ? 1 : -1;
-    const step = Math.abs(event.deltaY) > 30 ? 2 : 1;
-    const nextZoom = currentZoom + direction * step;
-    const boundedZoom = Math.max(4, Math.min(20, nextZoom));
-
-    mapRef.current.setZoom(boundedZoom);
-  }, []);
-
-  const loadStreetView = useCallback((lat: number, lng: number) => {
-    if (!(window as any).google || !streetViewContainerRef.current) return;
-
-    const googleRef = (window as any).google;
-    const sv = new googleRef.maps.StreetViewService();
-
-    sv.getPanorama(
-      {
-        location: { lat, lng },
-        radius: 80,
-        source: googleRef.maps.StreetViewSource.OUTDOOR,
-      },
-      (data: any, status: string) => {
-        if (status === 'OK' && data?.location?.latLng) {
-          setStreetViewAvailable(true);
-
-          streetViewPanoramaRef.current = new googleRef.maps.StreetViewPanorama(
-            streetViewContainerRef.current!,
-            {
-              position: data.location.latLng,
-              pov: { heading: 0, pitch: 0 },
-              zoom: 1,
-              addressControl: false,
-              gestureHandling: 'greedy',
-              fullscreenControl: false,
-              motionTracking: false,
-              linksControl: true,
-              panControl: true,
-              enableCloseButton: false,
-            }
-          );
-        } else {
-          setStreetViewAvailable(false);
-          if (streetViewContainerRef.current) {
-            streetViewContainerRef.current.innerHTML = '';
-          }
-        }
-      }
-    );
-  }, []);
-
-  const loadData = useCallback(async () => {
-    if (!isLoaded || !(window as any).google) return;
-
-    const token = localStorage.getItem('token') || '';
-    const headers = { Authorization: `Bearer ${token}` };
-
-    try {
-      setLoading(true);
-
-      const [prosRes, bookingsRes] = await Promise.all([
-        fetch(`${getApiBase()}/professionals`, { headers }),
-        fetch(`${getApiBase()}/bookings?limit=500`, { headers }),
-      ]);
-
-      const prosJson = await prosRes.json();
-      const bookingsJson = await bookingsRes.json();
-
-      const professionals: Professional[] = Array.isArray(prosJson) ? prosJson : prosJson.data || [];
-      const bookings: Booking[] = Array.isArray(bookingsJson)
-        ? bookingsJson
-        : bookingsJson.data || [];
-
-      const nextPins: PinItem[] = [];
-      let available = 0;
-      let inProgress = 0;
-
-      for (const pro of professionals) {
-        const lat = toNumber(pro.lat);
-        const lng = toNumber(pro.lng);
-
-        if (lat !== null && lng !== null) {
-          const isAvail = pro.is_available ?? pro.isAvailable ?? false;
-          if (isAvail) available += 1;
-
-          nextPins.push({
-            id: `pro-${pro.id}`,
-            lat,
-            lng,
-            type: 'professional',
-            data: pro,
-          });
-        }
-      }
-
-      const bookingsForMap = bookings.filter(b => Boolean(buildFullAddress(b) || (b.lat && b.lng)));
-
-      for (const booking of bookingsForMap) {
-        if (booking.status === 'IN_PROGRESS') inProgress += 1;
-
-        let coords: { lat: number; lng: number } | null = null;
-
-        const lat = toNumber(booking.lat);
-        const lng = toNumber(booking.lng);
-
-        if (lat !== null && lng !== null) {
-          coords = { lat, lng };
-        } else {
-          const address = buildFullAddress(booking);
-          if (address) coords = await geocodeAddress(address);
-        }
-
-        if (coords) {
-          nextPins.push({
-            id: `booking-${booking.id}`,
-            lat: coords.lat,
-            lng: coords.lng,
-            type: 'booking',
-            data: booking,
-          });
-        }
-      }
-
-      console.log('LIVE_MAP_DEBUG', {
-        professionals: professionals.length,
-        bookings: bookings.length,
-        bookingsForMap: bookingsForMap.length,
-        pinsBuilt: nextPins.length,
-        bookingPins: nextPins.filter(pin => pin.type === 'booking').length,
-        professionalPins: nextPins.filter(pin => pin.type === 'professional').length,
-      });
-
-      setPins(nextPins);
-      setStats({
-        pros: professionals.length,
-        available,
-        bookings: bookingsForMap.length,
-        inProgress,
-      });
-
-      if (!selectedPin) {
-        setTimeout(() => fitToPins(nextPins), 0);
-      }
-    } catch (error) {
-      console.error('Error loading map data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [fitToPins, isLoaded, selectedPin]);
-
-  useEffect(() => {
-    if (isLoaded) loadData();
-  }, [isLoaded, loadData]);
-
-  useMapRefresh(() => {
-    if (isLoaded) loadData();
-  }, 30000);
-
-  useEffect(() => {
-    if (!selectedPin) {
-      fitToPins(filteredPins);
-    }
-  }, [filteredPins, fitToPins, selectedPin]);
-
-  useEffect(() => {
-    const wrapper = mapWrapperRef.current;
-    if (!wrapper) return;
-
-    const bindTargets = () => {
-      const targets: EventTarget[] = [wrapper];
-      const gmStyle = wrapper.querySelector('.gm-style');
-      if (gmStyle) targets.push(gmStyle);
-
-      targets.forEach((target) => {
-        target.addEventListener('wheel', handleWheelZoom as EventListener, {
-          passive: false,
-          capture: true,
-        });
-      });
-
-      return () => {
-        targets.forEach((target) => {
-          target.removeEventListener('wheel', handleWheelZoom as EventListener, {
-            capture: true,
-          } as EventListenerOptions);
-        });
-      };
-    };
-
-    const cleanup = bindTargets();
-    const timer = window.setTimeout(() => {
-      cleanup();
-      bindTargets();
-    }, 1200);
-
-    return () => {
-      window.clearTimeout(timer);
-      cleanup();
-    };
-  }, [handleWheelZoom, isLoaded, pins.length]);
-
-
-  useEffect(() => {
-    if (!selectedPin || selectedPin.type !== 'booking') {
-      setStreetViewAvailable(false);
-      if (streetViewContainerRef.current) {
-        streetViewContainerRef.current.innerHTML = '';
-      }
-      return;
-    }
-
-    loadStreetView(selectedPin.lat, selectedPin.lng);
-  }, [selectedPin, loadStreetView]);
-
-
-  if (loadError) {
-    return (
-      <div
-        style={{
-          height: 760,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#fff',
-          borderRadius: 16,
-          border: '1px solid #e5e7eb',
-          color: '#EF4444',
-          fontSize: 14,
-        }}
-      >
-        Error cargando Google Maps
-      </div>
-    );
-  }
-
-  if (!apiKey) {
-    return (
-      <div style={{ height: 760, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC', borderRadius: 16, border: '1px solid #E2E8F0' }}>
-        <div style={{ textAlign: 'center', maxWidth: 400, padding: 32 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🗺️</div>
-          <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0D1B2A', margin: '0 0 8px' }}>Mapa no configurado</h3>
-          <p style={{ fontSize: 14, color: '#64748B', lineHeight: 1.6, margin: '0 0 20px' }}>
-            Para activar el mapa en vivo, agrega la variable de entorno en Vercel:
-          </p>
-          <div style={{ background: '#0D1B2A', color: '#4CAF50', borderRadius: 8, padding: '10px 16px', fontFamily: 'monospace', fontSize: 13, marginBottom: 16 }}>
-            NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-          </div>
-          <p style={{ fontSize: 12, color: '#94A3B8' }}>
-            Vercel → Settings → Environment Variables → agrega la key → Redeploy
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  const zoomIn = useCallback(() => {
-    if (!mapRef.current) return;
-    const currentZoom = mapRef.current.getZoom() ?? 11;
-    mapRef.current.setZoom(Math.min(20, currentZoom + 1));
-  }, []);
-
-  const zoomOut = useCallback(() => {
-    if (!mapRef.current) return;
-    const currentZoom = mapRef.current.getZoom() ?? 11;
-    mapRef.current.setZoom(Math.max(4, currentZoom - 1));
-  }, []);
-
-  const resetView = useCallback(() => {
-    fitToPins(filteredPins);
-  }, [fitToPins, filteredPins]);
-
-  const renderInfo = () => {
-    if (!selectedPin) {
-      return (
-        <div style={{ padding: 20, color: '#9CA3AF', textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📍</div>
-          <p style={{ fontSize: 13 }}>Haz clic en un pin</p>
-        </div>
-      );
-    }
-
-    if (selectedPin.type === 'professional') {
-      const p = selectedPin.data as Professional;
-      const name = p.full_name || p.fullName || 'Profesional';
-      const isAvail = p.is_available ?? p.isAvailable ?? false;
-
-      return (
-        <div style={{ padding: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>{name}</div>
-          <div style={{ fontSize: 12, color: isAvail ? '#10B981' : '#6B7280', marginBottom: 10 }}>
-            {isAvail ? 'Disponible' : 'No disponible'}
-          </div>
-          <div style={{ fontSize: 12, color: '#374151' }}>{p.phone || 'Sin teléfono'}</div>
-        </div>
-      );
-    }
-
-    const b = selectedPin.data as Booking;
-    const fullAddress = buildFullAddress(b) || 'Sin dirección';
-    const assignedPro = b.professionals?.[0]?.professional?.fullName || 'Sin asignar';
-
-    return (
-      <div style={{ padding: 16 }}>
-        <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4 }}>
-          {b.company?.contactName || b.company?.name || 'Cliente'}
-        </div>
-        <div
-          style={{
-            fontSize: 12,
-            color: STATUS_COLORS[b.status] || '#6B7280',
-            fontWeight: 700,
-            marginBottom: 12,
-          }}
-        >
-          {STATUS_LABELS[b.status] || b.status}
-        </div>
-
-        <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
-          <div style={{ fontSize: 12, color: '#374151' }}>
-            <strong>Direccion:</strong> {fullAddress}
-          </div>
-          <div style={{ fontSize: 12, color: '#374151' }}>
-            <strong>Fecha:</strong>{' '}
-            {b.scheduledAt ? new Date(b.scheduledAt).toLocaleDateString('es-US') : '—'}
-          </div>
-          <div style={{ fontSize: 12, color: '#374151' }}>
-            <strong>Hora:</strong>{' '}
-            {b.scheduledAt
-              ? new Date(b.scheduledAt).toLocaleTimeString('es-US', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : '—'}
-          </div>
-          <div style={{ fontSize: 12, color: '#374151' }}>
-            <strong>Sqft:</strong> {b.sqft ? `${b.sqft} ft²` : '—'}
-          </div>
-          <div style={{ fontSize: 12, color: '#374151' }}>
-            <strong>Profesional:</strong> {assignedPro}
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gap: 8, marginBottom: 14 }}>
-          <button
-            onClick={() => focusPin(selectedPin, 18)}
-            style={{
-              border: 'none',
-              borderRadius: 10,
-              padding: '10px 12px',
-              background: '#10B981',
-              color: 'white',
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            Centrar en mapa
-          </button>
-
-          <a
-            href={openGoogleMapsUrl(selectedPin.lat, selectedPin.lng)}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: 'block',
-              textAlign: 'center',
-              textDecoration: 'none',
-              borderRadius: 10,
-              padding: '10px 12px',
-              background: '#E5F0FF',
-              color: '#1D4ED8',
-              fontWeight: 700,
-            }}
-          >
-            Abrir en Google Maps
-          </a>
-
-          <a
-            href={openStreetViewUrl(selectedPin.lat, selectedPin.lng)}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: 'block',
-              textAlign: 'center',
-              textDecoration: 'none',
-              borderRadius: 10,
-              padding: '10px 12px',
-              background: '#F3E8FF',
-              color: '#7C3AED',
-              fontWeight: 700,
-            }}
-          >
-            Abrir Street View
-          </a>
-        </div>
-
-        <div style={{ marginTop: 12 }}>
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 800,
-              color: '#6B7280',
-              marginBottom: 8,
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
-            Vista de calle
-          </div>
-
-          <div
-            ref={streetViewContainerRef}
-            style={{
-              width: '100%',
-              height: 220,
-              borderRadius: 12,
-              overflow: 'hidden',
-              background: '#F3F4F6',
-              border: '1px solid #E5E7EB',
-            }}
-          />
-
-          {!streetViewAvailable && (
-            <div
-              style={{
-                marginTop: 8,
-                fontSize: 12,
-                color: '#6B7280',
-              }}
-            >
-              No se encontro Street View cercano para esta ubicacion.
-            </div>
-          )}
-        </div>
-
-        <div style={{ marginBottom: 12 }}>
-          <a
-            href={openGoogleMapsUrl(selectedPin.lat, selectedPin.lng)}
-            target="_blank"
-            rel="noreferrer"
-            style={{ fontSize: 11, color: '#10B981', fontWeight: 700, textDecoration: 'none' }}
-          >
-            Abrir en Google Maps ↗
-          </a>
-        </div>
-
-        <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.8 }}>
-          <div>Fecha: {b.scheduledAt ? new Date(b.scheduledAt).toLocaleDateString('es') : '—'}</div>
-          <div>
-            Hora:{' '}
-            {b.scheduledAt
-              ? new Date(b.scheduledAt).toLocaleTimeString('es', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : '—'}
-          </div>
-          <div>Sqft: {b.sqft ? `${b.sqft} ft²` : '—'}</div>
-          <div>Profesional: {assignedPro}</div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderLegend = () => (
-    <div style={{ borderTop: '1px solid #e5e7eb', padding: '14px 16px 16px' }}>
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 900,
-          color: '#6B7280',
-          marginBottom: 10,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-        }}
-      >
-        {t('map.legend')}
-      </div>
-      <div style={{ display: 'grid', gap: 8 }}>
-        {legendItems.map((item) => (
-          <div
-            key={item.label}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 12,
-              color: '#374151',
-              fontWeight: 600,
-            }}
-          >
-            <div
-              style={{
-                width: 24,
-                height: 24,
-                borderRadius: '50%',
-                background: item.color,
-                border: '2px solid white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                fontSize: 10,
-                fontWeight: 800,
-                flexShrink: 0,
-              }}
-            >
-              {item.badge}
-            </div>
-            <span>{item.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <style>{`
+        .admin-map-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+        .admin-map-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 12px; flex: 1; min-height: 0; }
+        @media (max-width: 1100px) {
+          .admin-map-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .admin-map-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
+
+      <div className="admin-map-stats">
         {[
-          { label: 'Profesionales', value: stats.pros, icon: '👷', color: '#E6F1FB' },
-          { label: 'Disponibles', value: stats.available, icon: '🟢', color: '#D1FAE5' },
-          { label: 'Servicios en mapa', value: stats.bookings, icon: '📍', color: '#EDE9FE' },
-          { label: 'En curso', value: stats.inProgress, icon: '⚡', color: '#FEF3C7' },
+          { label: t('admin.map.professionals'), value: stats.pros, mark: 'PR', bg: '#E6F1FB', color: C.navy },
+          { label: t('admin.map.availableCount'), value: stats.available, mark: 'AV', bg: '#D1FAE5', color: '#047857' },
+          { label: t('admin.map.servicesOnMap'), value: stats.bookings, mark: 'SV', bg: '#EDE9FE', color: '#6D28D9' },
+          { label: t('admin.map.inProgress'), value: stats.inProgress, mark: 'IP', bg: '#FEF3C7', color: '#92400E' },
         ].map(card => (
-          <div
-            key={card.label}
-            style={{
-              background: card.color,
-              borderRadius: 12,
-              padding: '12px 14px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-            }}
-          >
-            <span style={{ fontSize: 22 }}>{card.icon}</span>
+          <div key={card.label} style={{ background: card.bg, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, minHeight: 64 }}>
+            <span style={{ width: 32, height: 32, borderRadius: 10, background: '#fff', color: card.color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, boxShadow: '0 2px 8px rgba(13,55,129,0.06)' }}>{card.mark}</span>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1 }}>
-                {loading ? '…' : card.value}
-              </div>
-              <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{card.label}</div>
+              <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1, color: C.ink }}>{loading ? '...' : card.value}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{card.label}</div>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, flex: 1, minHeight: 0 }}>
-        <div
-          style={{
-            flex: 1,
-            borderRadius: 16,
-            overflow: 'hidden',
-            border: '1px solid #e5e7eb',
-            position: 'relative',
-            minHeight: 680,
-            background: '#f3f4f6',
-          }}
-        >
+      <div className="admin-map-grid">
+        <div style={{ borderRadius: 16, overflow: 'hidden', border: `1px solid ${C.border}`, position: 'relative', minHeight: 640, background: '#f3f4f6' }}>
           <div style={{ position: 'absolute', top: 12, left: 12, zIndex: 10, display: 'flex', gap: 6 }}>
             {(['all', 'professional', 'booking'] as const).map(type => (
-              <button
-                key={type}
-                onClick={() => {
-                  setSelectedPin(null);
-                  setFilterType(type);
-                }}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 20,
-                  border: 'none',
-                  background: filterType === type ? '#10B981' : 'white',
-                  color: filterType === type ? 'white' : '#374151',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                }}
-              >
-                {type === 'all' ? 'Todos' : type === 'professional' ? '👷 Pros' : '🏠 Servicios'}
+              <button key={type} onClick={() => { setSelectedPin(null); setFilterType(type); }} style={{ padding: '7px 12px', borderRadius: 9999, border: '1px solid rgba(13,55,129,0.12)', background: filterType === type ? C.green : '#fff', color: filterType === type ? '#fff' : C.ink, fontSize: 11, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(13,55,129,0.10)' }}>
+                {type === 'all' ? t('map.allPins') : type === 'professional' ? t('map.prosOnly') : t('map.servicesOnly')}
               </button>
             ))}
           </div>
 
-          <button
-            onClick={loadData}
-            style={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              zIndex: 10,
-              width: 34,
-              height: 34,
-              borderRadius: '50%',
-              border: 'none',
-              background: 'white',
-              fontSize: 16,
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-            }}
-            title="Actualizar"
-          >
-            🔄
-          </button>
-
-          {loading && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                zIndex: 9,
-                background: 'rgba(255,255,255,0.75)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 14,
-              }}
-            >
-              ⟳ Cargando mapa…
-            </div>
-          )}
-
-          {isLoaded && (
-            <>
-              <div
-            style={{
-              position: 'absolute',
-              right: 14,
-              top: 14,
-              zIndex: 30,
-              display: 'grid',
-              gap: 8,
-            }}
-          >
-            <button
-              onClick={zoomIn}
-              style={{
-                border: 'none',
-                borderRadius: 12,
-                padding: '10px 12px',
-                background: '#111827',
-                color: '#FFFFFF',
-                fontWeight: 800,
-                fontSize: 16,
-                cursor: 'pointer',
-                boxShadow: '0 8px 18px rgba(0,0,0,0.18)',
-              }}
-            >
-              + Acercar
-            </button>
-
-            <button
-              onClick={zoomOut}
-              style={{
-                border: 'none',
-                borderRadius: 12,
-                padding: '10px 12px',
-                background: '#374151',
-                color: '#FFFFFF',
-                fontWeight: 800,
-                fontSize: 16,
-                cursor: 'pointer',
-                boxShadow: '0 8px 18px rgba(0,0,0,0.18)',
-              }}
-            >
-              - Alejar
-            </button>
-
-            <button
-              onClick={resetView}
-              style={{
-                border: 'none',
-                borderRadius: 12,
-                padding: '10px 12px',
-                background: '#FFFFFF',
-                color: '#111827',
-                fontWeight: 800,
-                fontSize: 14,
-                cursor: 'pointer',
-                boxShadow: '0 8px 18px rgba(0,0,0,0.14)',
-              }}
-            >
-              Reset
-            </button>
+          <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, display: 'flex', gap: 6 }}>
+            <button onClick={zoomIn} title={t('map.zoomIn')} style={toolButton}>+</button>
+            <button onClick={zoomOut} title={t('map.zoomOut')} style={toolButton}>-</button>
+            <button onClick={() => fitToPins(filteredPins)} title={t('map.reset')} style={{ ...toolButton, width: 58 }}>Reset</button>
+            <button onClick={loadData} title={t('common.refresh')} style={toolButton}>R</button>
           </div>
 
-          <GoogleMap
+          {loading && <div style={loadingOverlay}>Loading map...</div>}
+
+          {isLoaded && (
+            <GoogleMap
               mapContainerStyle={{ width: '100%', height: '100%' }}
               center={DEFAULT_CENTER}
               zoom={8}
-              onLoad={map => {
-                mapRef.current = map;
-              }}
-         options={{
-                gestureHandling: 'greedy',
-                scrollwheel: true,
-                zoomControl: true,
-                fullscreenControl: false,
-                streetViewControl: false,
-                mapTypeControl: false,
-                clickableIcons: false,
-              }}
+              onLoad={map => { mapRef.current = map; }}
+              options={{ gestureHandling: 'greedy', scrollwheel: true, zoomControl: true, fullscreenControl: true, streetViewControl: false, mapTypeControl: false, clickableIcons: false }}
             >
               {filteredPins.map(pin => {
                 const isProfessional = pin.type === 'professional';
-                const pro = pin.data as Professional;
+                const professional = pin.data as Professional;
                 const booking = pin.data as Booking;
-                const isAvail = isProfessional ? (pro.is_available ?? pro.isAvailable ?? false) : false;
-
-                const color = isProfessional
-                  ? isAvail
-                    ? '#10B981'
-                    : '#6B7280'
-                  : STATUS_COLORS[booking.status] || '#6B7280';
-
-                const isSelected = selectedPin?.id === pin.id;
-
+                const isAvailable = professional.is_available ?? professional.isAvailable ?? false;
+                const color = isProfessional ? (isAvailable ? '#10B981' : '#4B5563') : (STATUS_COLORS[booking.status] || '#6B7280');
+                const selected = selectedPin?.id === pin.id;
                 return (
                   <MarkerF
                     key={pin.id}
                     position={{ lat: pin.lat, lng: pin.lng }}
-                    onClick={() => {
-                      setSelectedPin(pin);
-                      focusPin(pin, 15);
-                    }}
-                    label={{
-                      text: isProfessional ? 'P' : 'S',
-                      color: '#ffffff',
-                      fontWeight: '700',
-                      fontSize: '10px',
-                    }}
-                    icon={{
-                      path: google.maps.SymbolPath.CIRCLE,
-                      fillColor: color,
-                      fillOpacity: 1,
-                      strokeColor: '#ffffff',
-                      strokeWeight: 2,
-                      scale: isSelected ? 12 : 10,
-                    }}
+                    onClick={() => { setSelectedPin(pin); focusPin(pin, 15); }}
+                    label={{ text: isProfessional ? 'P' : 'S', color: '#fff', fontWeight: '800', fontSize: '10px' }}
+                    icon={{ path: google.maps.SymbolPath.CIRCLE, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2, scale: selected ? 12 : 10 }}
                   />
                 );
               })}
             </GoogleMap>
-              </>
-            )}
-        </div>
-
-        <div
-          style={{
-            width: 300,
-            background: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: 16,
-            overflow: 'hidden',
-            flexShrink: 0,
-          }}
-        >
-          <div
-            style={{
-              padding: '12px 16px',
-              borderBottom: '1px solid #e5e7eb',
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#10B981',
-              letterSpacing: '0.05em',
-              textTransform: 'uppercase',
-            }}
-          >
-            {selectedPin ? 'Detalle del pin' : 'Información'}
-          </div>
-
-          <div style={{ overflowY: 'auto', maxHeight: 680 }}>
-            {renderInfo()}
-            {renderLegend()}
-          </div>
-
-          {selectedPin && (
-            <div style={{ padding: '8px 16px', borderTop: '1px solid #e5e7eb' }}>
-              <button
-                onClick={() => setSelectedPin(null)}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  background: '#f3f4f6',
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  cursor: 'pointer',
-                  color: '#6B7280',
-                  fontSize: 12,
-                }}
-              >
-                ✕ Cerrar
-              </button>
-            </div>
           )}
         </div>
+
+        <aside style={{ background: '#fff', border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden', minHeight: 0 }}>
+          <div style={{ padding: '12px 16px', borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 800, color: C.green, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            {selectedPin ? t('map.pinDetail') : t('map.information')}
+          </div>
+          <div style={{ overflowY: 'auto', maxHeight: 660 }}>
+            <PinDetails pin={selectedPin} focusPin={focusPin} />
+            <div style={{ borderTop: `1px solid ${C.border}`, padding: '14px 16px 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('map.legend')}</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {legendItems.map(item => (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.ink, fontWeight: 600 }}>
+                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: item.color, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800 }}>{item.badge}</span>
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
   );
 }
+
+function PinDetails({ pin, focusPin }: { pin: PinItem | null; focusPin: (pin: PinItem | null, zoom?: number) => void }) {
+  const { t } = useTranslation();
+  if (!pin) {
+    return <div style={{ padding: 28, color: C.muted, textAlign: 'center', fontSize: 13 }}>{t('map.clickPin')}</div>;
+  }
+
+  if (pin.type === 'professional') {
+    const pro = pin.data as Professional;
+    const name = pro.full_name || pro.fullName || t('map.professional');
+    const isAvailable = pro.is_available ?? pro.isAvailable ?? false;
+    return (
+      <div style={{ padding: 16 }}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15, color: C.ink }}>{name}</h3>
+        <span style={{ display: 'inline-flex', borderRadius: 9999, padding: '5px 10px', background: isAvailable ? '#D1FAE5' : '#F1F5F9', color: isAvailable ? '#065F46' : C.muted, fontSize: 11, fontWeight: 700 }}>{isAvailable ? t('map.availablePro') : t('map.unavailablePro')}</span>
+        <p style={{ margin: '12px 0 0', color: C.muted, fontSize: 12 }}>{pro.phone || '-'}</p>
+      </div>
+    );
+  }
+
+  const booking = pin.data as Booking;
+  const address = buildAddress(booking) || '-';
+  const assignedPro = booking.professionals?.[0]?.professional?.fullName || '-';
+  return (
+    <div style={{ padding: 16 }}>
+      <h3 style={{ margin: '0 0 6px', fontSize: 15, color: C.ink }}>{serviceLabel(booking.service_type)}</h3>
+      <span style={{ display: 'inline-flex', borderRadius: 9999, padding: '5px 10px', background: '#EAF4FF', color: C.navy, fontSize: 11, fontWeight: 700 }}>{booking.status}</span>
+      <div style={{ display: 'grid', gap: 8, marginTop: 14, fontSize: 12, color: '#374151' }}>
+        <div><strong>{t('map.direction')}:</strong> {address}</div>
+        <div><strong>{t('map.date')}:</strong> {booking.scheduled_at || booking.scheduledAt ? new Date(booking.scheduled_at || booking.scheduledAt || '').toLocaleDateString() : '-'}</div>
+        <div><strong>{t('map.sqft')}:</strong> {booking.sqft || '-'}</div>
+        <div><strong>{t('map.professional')}:</strong> {assignedPro}</div>
+      </div>
+      <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+        <button onClick={() => focusPin(pin, 18)} style={primaryAction}>{t('map.centerOnMap')}</button>
+        <a href={mapsUrl(pin.lat, pin.lng)} target="_blank" rel="noreferrer" style={secondaryAction}>{t('map.openGoogleMaps')}</a>
+      </div>
+    </div>
+  );
+}
+
+const emptyState = {
+  height: 760,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: '#fff',
+  borderRadius: 16,
+  border: '1px solid #E2E8F0',
+  color: '#64748B',
+  fontSize: 14,
+};
+
+const loadingOverlay = {
+  position: 'absolute' as const,
+  inset: 0,
+  zIndex: 9,
+  background: 'rgba(255,255,255,0.72)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: 14,
+  color: C.muted,
+};
+
+const toolButton = {
+  width: 38,
+  height: 38,
+  borderRadius: 12,
+  border: '1px solid rgba(13,55,129,0.12)',
+  background: '#fff',
+  color: C.ink,
+  fontWeight: 800,
+  fontSize: 14,
+  cursor: 'pointer',
+  boxShadow: '0 6px 18px rgba(13,55,129,0.12)',
+};
+
+const primaryAction = {
+  border: 0,
+  borderRadius: 10,
+  padding: '10px 12px',
+  background: C.green,
+  color: '#fff',
+  fontWeight: 700,
+  cursor: 'pointer',
+};
+
+const secondaryAction = {
+  display: 'block',
+  textAlign: 'center' as const,
+  textDecoration: 'none',
+  borderRadius: 10,
+  padding: '10px 12px',
+  background: '#EAF4FF',
+  color: C.navy,
+  fontWeight: 700,
+};

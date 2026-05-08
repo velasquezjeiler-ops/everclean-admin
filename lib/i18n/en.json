@@ -60,6 +60,7 @@
     "bookings": "Bookings",
     "professionals": "Professionals",
     "liveMap": "Live Map",
+    "financials": "Financials",
     "navigation": "Navigation"
   },
   "pro": {
@@ -354,6 +355,36 @@
       "availableCount": "Available",
       "servicesOnMap": "Services on map",
       "inProgress": "In progress"
+    },
+    "financials": {
+      "kicker": "Financial control",
+      "title": "Financials",
+      "subtitle": "Track client revenue, app earnings, professional payouts, and Stripe balance from admin.",
+      "totalRevenue": "Total revenue",
+      "totalBookings": "{count} bookings",
+      "appEarnings": "App earnings",
+      "platformFees": "Platform fees",
+      "proPayouts": "Pro payouts",
+      "professionalShare": "Professional share",
+      "pendingPayouts": "Pending payouts",
+      "pendingCount": "{count} pending",
+      "avgMargin": "Average margin",
+      "marginHelp": "App fee margin",
+      "stripeAvailable": "Stripe available",
+      "stripePending": "Stripe pending",
+      "stripeBalance": "Stripe balance",
+      "openStripe": "Open Stripe Dashboard",
+      "byState": "Revenue by state",
+      "byStateHelp": "Breakdown connecting bookings, payouts, and EverClean fees.",
+      "state": "State",
+      "bookings": "Bookings",
+      "revenue": "Revenue",
+      "payouts": "Payouts",
+      "fees": "App fees",
+      "stripeControl": "Stripe control",
+      "stripeHelp": "Open the Stripe dashboard to manage payments, balances, transfers, disputes, and account settings.",
+      "noData": "No financial records yet",
+      "error": "Unable to load financial data. Check the backend connection."
     }
   }
 }
