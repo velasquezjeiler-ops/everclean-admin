@@ -3,64 +3,67 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 
 const API = '/api';
+const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', shadow:'0 2px 8px rgba(13,55,129,0.06)' };
 
 export default function LeadsPage() {
   const { t } = useTranslation();
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token') || '';
-    fetch(API+'/leads?limit=100', { headers: { Authorization: 'Bearer '+token } })
-      .then(r => r.json()).then(d => { setLeads(d.data||[]); setLoading(false); });
-  }, []);
+  useEffect(()=>{
+    const token = localStorage.getItem('token')||'';
+    fetch(API+'/leads?limit=100',{headers:{Authorization:'Bearer '+token}})
+      .then(r=>r.json()).then(d=>{setLeads(d.data||[]);setLoading(false);});
+  },[]);
 
-  const converted = leads.filter((lead) => lead.status === 'CONVERTED').length;
-  const open = leads.length - converted;
-
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-[#0D3781] border-t-transparent rounded-full animate-spin" /></div>;
+  const open = leads.filter(l=>l.status!=='CONVERTED').length;
+  const converted = leads.filter(l=>l.status==='CONVERTED').length;
+  const card = {background:'#fff',border:`1px solid ${C.border}`,borderRadius:14,boxShadow:C.shadow};
 
   return (
-    <div className="ec-page">
-      <div className="ec-page-header">
+    <div style={{width:'100%',maxWidth:1480,margin:'0 auto',fontFamily:"'Inter',system-ui,sans-serif"}}>
+      <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:16,marginBottom:24,flexWrap:'wrap'}}>
         <div>
-          <p className="ec-eyebrow">{t('sidebar.leads')}</p>
-          <h1 className="ec-title">{t('admin.leads.title')}</h1>
-          <p className="ec-subtitle">{t('admin.leads.subtitle')}</p>
+          <p style={{margin:'0 0 4px',color:'#388E3C',fontSize:11,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase'}}>{t('sidebar.leads')}</p>
+          <h1 style={{margin:0,fontSize:'clamp(22px,2.8vw,32px)',fontWeight:600,color:C.ink}}>{t('admin.leads.title')}</h1>
+          <p style={{margin:'6px 0 0',color:C.muted,fontSize:14}}>{t('admin.leads.subtitle')}</p>
         </div>
-        <div className="ec-pill bg-[#EAF4FF] text-[#0D3781]">{leads.length} {t('admin.leads.records')}</div>
+        <div style={{borderRadius:9999,padding:'6px 14px',fontSize:12,fontWeight:600,background:'#EAF4FF',color:C.navy}}>{leads.length} {t('admin.bookings.records')}</div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
         {[
-          { label: t('admin.leads.totalLeads'), value: leads.length, color: '#0D3781' },
-          { label: t('admin.leads.open'), value: open, color: '#F59E0B' },
-          { label: t('admin.leads.converted'), value: converted, color: '#4CAF50' },
-        ].map((item) => (
-          <section key={item.label} className="ec-panel p-5">
-            <div className="text-xs font-bold uppercase tracking-wide text-[#64748B]">{item.label}</div>
-            <div className="mt-2 text-3xl font-extrabold" style={{ color: item.color }}>{item.value}</div>
-          </section>
+          {label:t('admin.leads.totalLeads'),value:leads.length,color:C.navy},
+          {label:t('admin.leads.openLeads'),value:open,color:'#F59E0B'},
+          {label:t('admin.leads.converted'),value:converted,color:C.green},
+        ].map(s=>(
+          <div key={s.label} style={{...card,padding:24}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>{s.label}</div>
+            <div style={{fontSize:32,fontWeight:700,color:s.color}}>{loading?'...':s.value}</div>
+          </div>
         ))}
       </div>
-      {leads.length === 0 ? (
-        <div className="text-center py-12 ec-card"><p className="text-[#64748B] text-sm">{t('admin.dashboard.noLeads')}</p></div>
+
+      {loading ? (
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,color:C.muted}}>Loading…</div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {leads.map(l => (
-            <div key={l.id} className="ec-card p-5">
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <p className="font-extrabold text-[#0D1B2A] text-sm truncate flex-1">{l.company_name || l.contact_name}</p>
-                <span className={`ec-pill ${l.status==='CONVERTED'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}`}>{l.status || t('admin.leads.new')}</span>
-              </div>
-              <p className="text-xs text-gray-500">{l.contact_email} · {l.contact_phone||'—'}</p>
-              {l.city && <p className="text-xs text-gray-400 mt-0.5">📍 {l.city}, {l.state}</p>}
-              <div className="flex flex-wrap gap-2 mt-3">
-                <span className="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{l.source_channel||'—'}</span>
-                {l.created_at && <span className="text-[10px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{new Date(l.created_at).toLocaleDateString()}</span>}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:14}}>
+          {leads.map(l=>(
+            <div key={l.id} style={{...card,padding:20}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
+                <div style={{minWidth:0}}>
+                  <div style={{fontSize:15,fontWeight:600,color:C.ink,marginBottom:4,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.company_name||l.contact_name||'Lead'}</div>
+                  <div style={{fontSize:12,color:C.muted,marginBottom:10}}>{l.email||'—'} · {l.phone||'—'}</div>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{l.source||'WEB'}</span>
+                    <span style={{borderRadius:9999,padding:'3px 10px',fontSize:11,fontWeight:600,background:'#F1F5F9',color:'#475569'}}>{l.created_at?new Date(l.created_at).toLocaleDateString():''}</span>
+                  </div>
+                </div>
+                <span style={{flexShrink:0,borderRadius:9999,padding:'4px 12px',fontSize:11,fontWeight:700,background:'#FEF3C7',color:'#92400E'}}>{l.status||'NEW'}</span>
               </div>
             </div>
           ))}
+          {!leads.length&&<div style={{gridColumn:'1/-1',padding:'60px 0',textAlign:'center',color:C.muted,fontSize:14}}>{t('admin.dashboard.noLeads')}</div>}
         </div>
       )}
     </div>
