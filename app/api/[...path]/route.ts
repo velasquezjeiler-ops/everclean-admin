@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from 'next/server';
 const BACKENDS = [
   process.env.BACKEND_API_URL,
   process.env.NEXT_PUBLIC_API_URL,
-  'https://commercial-clean-setup--velasquezjeiler.replit.app/api',
   'https://commercial-clean-setup.replit.app/api',
+  'https://commercial-clean-setup--velasquezjeiler.replit.app/api',
 ].filter(Boolean) as string[];
 
 async function tryBackend(
