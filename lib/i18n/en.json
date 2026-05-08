@@ -306,7 +306,9 @@
       "totalBookings": "Total bookings",
       "activeWork": "Active work",
       "totalRevenue": "Total revenue",
-      "noBookings": "No bookings yet"
+      "noBookings": "No bookings yet",
+      "assign": "Assign pro",
+      "selectPro": "Select pro"
     },
     "leads": {
       "title": "Leads",
@@ -337,7 +339,12 @@
       "available": "Available",
       "unavailable": "Unavailable",
       "records": "records",
-      "avgRate": "Average rate"
+      "avgRate": "Average rate",
+      "totalPros": "Total pros",
+      "more": "Details",
+      "less": "Hide",
+      "call": "Call",
+      "noPros": "No professionals yet"
     },
     "map": {
       "title": "Live Map",

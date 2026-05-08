@@ -3,7 +3,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '../../../lib/i18n/useTranslation';
 import { getApiBase } from '../../../lib/apiBase';
 
-const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', shadow:'0 2px 8px rgba(13,55,129,0.06)' };
+const C = {
+  navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', ink:'#0D1B2A',
+  muted:'#64748B', border:'#E2E8F0', soft:'#F8FAFC',
+  shadow:'0 2px 8px rgba(13,55,129,0.06)'
+};
 
 const STATUS_STYLE: Record<string,{bg:string,color:string}> = {
   PENDING_ASSIGNMENT:{bg:'#FEF3C7',color:'#92400E'},
@@ -13,38 +17,56 @@ const STATUS_STYLE: Record<string,{bg:string,color:string}> = {
   CANCELLED:{bg:'#FEE2E2',color:'#991B1B'},
 };
 
-function svcLabel(v?:string){return(v||'Service').replace(/_/g,' ').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());}
+function serviceLabel(value?: string) {
+  return (value || 'Service').replace(/_/g,' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function serviceCode(value?: string) {
+  return (value || 'EC').split('_').map(part => part[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function fullAddress(b: any) {
+  return [b.address, b.city, b.state].filter(Boolean).join(', ') || '-';
+}
 
 export default function BookingsPage() {
   const { t } = useTranslation();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pros, setPros] = useState<any[]>([]);
-  const [assigning, setAssigning] = useState<string|null>(null);
+  const [assigning, setAssigning] = useState<string | null>(null);
   const [selectedPro, setSelectedPro] = useState<Record<string,string>>({});
 
-  useEffect(()=>{
-    const token = localStorage.getItem('token')||'';
-    Promise.all([
-      fetch(getApiBase()+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()),
-      fetch(getApiBase()+'/professionals',{headers:{Authorization:'Bearer '+token}}).then(r=>r.json()),
-    ]).then(([b,p])=>{setBookings(b.data||[]);setPros(p.data||[]);setLoading(false);});
-  },[]);
-
-  async function assignPro(bookingId:string) {
-    const proId = selectedPro[bookingId];
-    if (!proId) return;
-    const token = localStorage.getItem('token')||'';
-    await fetch(getApiBase()+`/bookings/${bookingId}/assign`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({professionalId:proId})});
-    setAssigning(null);
-    const r = await fetch(getApiBase()+'/bookings?limit=100',{headers:{Authorization:'Bearer '+token}});
-    const d = await r.json();
-    setBookings(d.data||[]);
+  async function load() {
+    const token = localStorage.getItem('token') || '';
+    const [bookingsRes, prosRes] = await Promise.all([
+      fetch(getApiBase() + '/bookings?limit=100', { headers:{ Authorization:'Bearer ' + token } }).then(r => r.json()),
+      fetch(getApiBase() + '/professionals', { headers:{ Authorization:'Bearer ' + token } }).then(r => r.json()),
+    ]);
+    setBookings(bookingsRes.data || []);
+    setPros(prosRes.data || []);
+    setLoading(false);
   }
 
-  const pending = bookings.filter(b=>b.status==='PENDING_ASSIGNMENT').length;
-  const active = bookings.filter(b=>['CONFIRMED','IN_PROGRESS'].includes(b.status)).length;
-  const card = {background:'#fff',border:`1px solid ${C.border}`,borderRadius:14,boxShadow:C.shadow};
+  useEffect(() => { load(); }, []);
+
+  async function assignPro(bookingId: string) {
+    const professionalId = selectedPro[bookingId];
+    if (!professionalId) return;
+    const token = localStorage.getItem('token') || '';
+    await fetch(getApiBase() + `/bookings/${bookingId}/assign`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+      body: JSON.stringify({ professionalId }),
+    });
+    setAssigning(null);
+    await load();
+  }
+
+  const pending = bookings.filter(b => b.status === 'PENDING_ASSIGNMENT').length;
+  const active = bookings.filter(b => ['CONFIRMED','IN_PROGRESS'].includes(b.status)).length;
+  const revenue = bookings.reduce((sum, b) => sum + Number(b.client_price || b.total_amount || 0), 0);
+  const card = { background:'#fff', border:`1px solid ${C.border}`, borderRadius:14, boxShadow:C.shadow };
 
   return (
     <div style={{width:'100%',maxWidth:1480,margin:'0 auto',fontFamily:"'Inter',system-ui,sans-serif"}}>
@@ -57,65 +79,115 @@ export default function BookingsPage() {
         <div style={{borderRadius:9999,padding:'6px 14px',fontSize:12,fontWeight:600,background:'#EAF4FF',color:C.navy}}>{bookings.length} {t('admin.bookings.records')}</div>
       </div>
 
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16,marginBottom:24}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:16,marginBottom:24}}>
         {[
           {label:t('admin.bookings.totalBookings'),value:bookings.length,color:C.navy},
           {label:t('statuses.PENDING_ASSIGNMENT'),value:pending,color:'#F59E0B'},
           {label:t('admin.bookings.activeWork'),value:active,color:C.green},
-        ].map(s=>(
-          <div key={s.label} style={{...card,padding:24}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>{s.label}</div>
-            <div style={{fontSize:32,fontWeight:700,color:s.color}}>{loading?'...':s.value}</div>
+          {label:t('admin.bookings.totalRevenue'),value:`$${revenue.toFixed(0)}`,color:C.blue},
+        ].map(item => (
+          <div key={item.label} style={{...card,padding:22}}>
+            <div style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:10}}>{item.label}</div>
+            <div style={{fontSize:32,fontWeight:700,color:item.color,lineHeight:1}}>{loading ? '...' : item.value}</div>
           </div>
         ))}
       </div>
 
       {loading ? (
-        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:200,color:C.muted}}>Loading…</div>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:220,color:C.muted}}>Loading...</div>
       ) : (
-        <div style={{...card,overflow:'hidden'}}>
-          <div style={{display:'grid',gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1.5fr 1fr',gap:0,padding:'12px 20px',borderBottom:`1px solid ${C.border}',background:'#F8FAFC`}}>
-            {[t('admin.bookings.service'),t('admin.bookings.company'),t('admin.bookings.date'),t('admin.bookings.total'),t('admin.bookings.professional'),t('admin.bookings.status')].map(h=>(
-              <div key={h} style={{fontSize:11,fontWeight:700,color:C.muted,textTransform:'uppercase',letterSpacing:'0.08em'}}>{h}</div>
-            ))}
-          </div>
-          {bookings.map((b,i)=>{
-            const ss = STATUS_STYLE[b.status]||{bg:'#F1F5F9',color:'#475569'};
-            const proName = b.professionals?.[0]?.professional?.fullName||b.professional?.fullName||'—';
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:14}}>
+          {bookings.map(booking => {
+            const status = STATUS_STYLE[booking.status] || {bg:'#F1F5F9',color:'#475569'};
+            const proName = booking.professionals?.[0]?.professional?.fullName || booking.professional?.fullName || t('admin.bookings.unassigned');
+            const assigningThis = assigning === booking.id;
+
             return (
-              <div key={b.id} style={{display:'grid',gridTemplateColumns:'2fr 1.5fr 1fr 1fr 1.5fr 1fr',gap:0,padding:'14px 20px',borderBottom:i<bookings.length-1?`1px solid ${C.border}`:'none',alignItems:'center'}}>
-                <div style={{fontSize:13,fontWeight:600,color:C.ink}}>{svcLabel(b.service_type)}</div>
-                <div style={{fontSize:12,color:C.muted,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.address||'—'}</div>
-                <div style={{fontSize:12,color:C.muted}}>{b.scheduled_at?new Date(b.scheduled_at).toLocaleDateString():'—'}</div>
-                <div style={{fontSize:13,fontWeight:600,color:C.green}}>${Number(b.client_price||b.total_amount||0).toFixed(0)}</div>
-                <div>
-                  {b.status==='PENDING_ASSIGNMENT' ? (
-                    assigning===b.id ? (
-                      <div style={{display:'flex',gap:6}}>
-                        <select value={selectedPro[b.id]||''} onChange={e=>setSelectedPro(p=>({...p,[b.id]:e.target.value}))} style={{flex:1,fontSize:12,border:`1px solid ${C.border}`,borderRadius:6,padding:'4px 8px',outline:'none'}}>
-                          <option value="">Select pro</option>
-                          {pros.map(p=><option key={p.id} value={p.id}>{p.full_name||p.fullName}</option>)}
+              <section key={booking.id} style={{...card,background:C.soft,padding:16}}>
+                <div style={{display:'flex',alignItems:'flex-start',gap:14}}>
+                  <div style={{width:48,height:48,borderRadius:10,background:'#EAF0F7',color:C.navy,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:16,flexShrink:0}}>
+                    {serviceCode(booking.service_type)}
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10}}>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:15,fontWeight:700,color:C.ink,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{serviceLabel(booking.service_type)}</div>
+                        <div style={{fontSize:12,color:C.blue,marginTop:3,textTransform:'uppercase',letterSpacing:'0.02em',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{fullAddress(booking)}</div>
+                      </div>
+                      <span style={{borderRadius:9999,padding:'5px 12px',fontSize:11,fontWeight:700,background:status.bg,color:status.color,whiteSpace:'nowrap'}}>
+                        {t('statuses.' + booking.status)}
+                      </span>
+                    </div>
+
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
+                      <span style={chipStyle}>{booking.scheduled_at ? new Date(booking.scheduled_at).toLocaleDateString() : '-'}</span>
+                      <span style={chipStyle}>{Number(booking.sqft || 0).toFixed(0)} sqft</span>
+                      <span style={{...chipStyle,background:'#D1FAE5',color:'#065F46'}}>${Number(booking.client_price || booking.total_amount || 0).toFixed(2)}</span>
+                    </div>
+
+                    {assigningThis ? (
+                      <div style={{display:'grid',gridTemplateColumns:'1fr auto auto',gap:8,marginTop:14}}>
+                        <select value={selectedPro[booking.id] || ''} onChange={e=>setSelectedPro(p=>({...p,[booking.id]:e.target.value}))} style={{height:40,border:`1px solid ${C.border}`,borderRadius:10,padding:'0 12px',fontSize:12,background:'#fff',outline:'none'}}>
+                          <option value="">{t('admin.bookings.selectPro')}</option>
+                          {pros.map(pro => <option key={pro.id} value={pro.id}>{pro.full_name || pro.fullName}</option>)}
                         </select>
-                        <button onClick={()=>assignPro(b.id)} style={{padding:'4px 10px',borderRadius:6,border:0,background:C.green,color:'#fff',fontSize:11,fontWeight:600,cursor:'pointer'}}>✓</button>
-                        <button onClick={()=>setAssigning(null)} style={{padding:'4px 10px',borderRadius:6,border:`1px solid ${C.border}`,background:'#fff',color:C.muted,fontSize:11,cursor:'pointer'}}>✕</button>
+                        <button onClick={()=>assignPro(booking.id)} style={smallPrimary}>{t('common.confirm')}</button>
+                        <button onClick={()=>setAssigning(null)} style={smallSecondary}>{t('common.cancel')}</button>
                       </div>
                     ) : (
-                      <button onClick={()=>setAssigning(b.id)} style={{padding:'5px 12px',borderRadius:9999,border:0,background:C.green,color:'#fff',fontSize:11,fontWeight:600,cursor:'pointer'}}>{t('admin.bookings.assign')}</button>
-                    )
-                  ) : (
-                    <span style={{fontSize:12,color:C.ink}}>{proName}</span>
-                  )}
+                      <div style={{display:'grid',gridTemplateColumns:booking.status === 'PENDING_ASSIGNMENT' ? '1fr 1fr' : '1fr',gap:8,marginTop:14}}>
+                        <div style={proBox}>{proName}</div>
+                        {booking.status === 'PENDING_ASSIGNMENT' && (
+                          <button onClick={()=>setAssigning(booking.id)} style={primaryButton}>{t('admin.bookings.assign')}</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <span style={{borderRadius:9999,padding:'4px 10px',fontSize:11,fontWeight:600,background:ss.bg,color:ss.color,display:'inline-flex'}}>{t('statuses.'+b.status)}</span>
-              </div>
+              </section>
             );
           })}
-          {!bookings.length&&<div style={{padding:'60px 0',textAlign:'center',color:C.muted,fontSize:14}}>{t('admin.bookings.noBookings')}</div>}
-          <div style={{padding:'12px 20px',borderTop:`1px solid ${C.border}`,textAlign:'right',fontSize:13,fontWeight:600,color:C.muted}}>
-            {t('admin.bookings.totalRevenue')}: <span style={{color:C.green}}>${bookings.reduce((s,b)=>s+Number(b.client_price||b.total_amount||0),0).toFixed(0)}</span>
-          </div>
+          {!bookings.length && <div style={{gridColumn:'1/-1',...card,padding:'60px 0',textAlign:'center',color:C.muted,fontSize:14}}>{t('admin.bookings.noBookings')}</div>}
         </div>
       )}
     </div>
   );
 }
+
+const chipStyle = {
+  border:'1px solid #E2E8F0',
+  background:'#fff',
+  borderRadius:9999,
+  padding:'6px 10px',
+  color:'#64748B',
+  fontSize:12,
+  fontWeight:600,
+};
+
+const proBox = {
+  border:'1px solid #E2E8F0',
+  background:'#fff',
+  borderRadius:10,
+  padding:'11px 12px',
+  color:'#0D1B2A',
+  fontSize:12,
+  fontWeight:600,
+  minWidth:0,
+  overflow:'hidden',
+  textOverflow:'ellipsis',
+  whiteSpace:'nowrap' as const,
+};
+
+const primaryButton = {
+  border:0,
+  borderRadius:10,
+  background:'#0D3781',
+  color:'#fff',
+  padding:'11px 14px',
+  fontSize:12,
+  fontWeight:700,
+  cursor:'pointer',
+};
+
+const smallPrimary = { ...primaryButton, background:'#4CAF50', padding:'0 14px' };
+const smallSecondary = { ...primaryButton, background:'#fff', color:'#64748B', border:'1px solid #E2E8F0', padding:'0 14px' };

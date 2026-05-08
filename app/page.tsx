@@ -12,9 +12,9 @@ const C = {
 };
 
 const features = [
-  { icon: '⚡', label: 'Operations', detail: 'Manage bookings in real time' },
-  { icon: '🗺️', label: 'Live Map', detail: 'Track field professionals' },
-  { icon: '👥', label: 'Team', detail: 'Full team management' },
+  { icon: '01', label: 'Operations', detail: 'Manage bookings in real time' },
+  { icon: '02', label: 'Live Map', detail: 'Track field professionals' },
+  { icon: '03', label: 'Team', detail: 'Full team management' },
 ];
 
 async function readResponse(res: Response) {
@@ -202,12 +202,12 @@ export default function AdminLogin() {
                   fontFamily: 'inherit', transition: 'background 0.15s',
                 }}
               >
-                {loading ? 'Signing in…' : 'Sign in to Admin'}
+                {loading ? 'Signing in...' : 'Sign in to Admin'}
               </button>
             </div>
 
             <p style={{ marginTop: 32, textAlign: 'center', fontSize: 12, color: '#94A3B8' }}>
-              © 2026 EverClean App · Admin Portal
+              (c) 2026 EverClean App. Admin Portal.
             </p>
           </div>
         </div>

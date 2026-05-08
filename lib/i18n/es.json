@@ -306,7 +306,9 @@
       "totalBookings": "Reservas totales",
       "activeWork": "Trabajo activo",
       "totalRevenue": "Ingresos totales",
-      "noBookings": "Sin reservas aun"
+      "noBookings": "Sin reservas aun",
+      "assign": "Asignar pro",
+      "selectPro": "Seleccionar pro"
     },
     "leads": {
       "title": "Prospectos",
@@ -334,7 +336,12 @@
       "available": "Disponible",
       "unavailable": "No disponible",
       "records": "registros",
-      "avgRate": "Tarifa promedio"
+      "avgRate": "Tarifa promedio",
+      "totalPros": "Total pros",
+      "more": "Detalles",
+      "less": "Ocultar",
+      "call": "Llamar",
+      "noPros": "Sin profesionales aun"
     },
     "map": {
       "title": "Mapa en Vivo",
