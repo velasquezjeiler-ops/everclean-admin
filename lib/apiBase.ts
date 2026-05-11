@@ -5,8 +5,12 @@ function cleanBase(value?: string | null) {
 }
 
 export function getApiBase() {
-  if (typeof window === 'undefined') return '/api';
-  return cleanBase(localStorage.getItem('apiBase')) || '/api';
+  if (typeof window === 'undefined') return process.env.NEXT_PUBLIC_API_URL || FALLBACK_API_BASE;
+  return (
+    cleanBase(localStorage.getItem('apiBase')) ||
+    cleanBase(process.env.NEXT_PUBLIC_API_URL) ||
+    FALLBACK_API_BASE
+  );
 }
 
 export function rememberApiBase(base: string) {
