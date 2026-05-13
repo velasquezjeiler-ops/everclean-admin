@@ -1,6 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { getApiBase } from '../../../lib/apiBase';
+import { useTranslation } from '../../../lib/i18n/useTranslation';
+
+function MarkBadge({ mark, color }: { mark: string; color: string }) { return <span style={{width:34,height:34,borderRadius:10,background:color+'14',border:'1px solid '+color+'33',color,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,flexShrink:0}}>{mark}</span>; }
 
 const C = { navy:'#0D3781', blue:'#1565C0', green:'#4CAF50', greenDk:'#388E3C', ink:'#0D1B2A', muted:'#64748B', border:'#E2E8F0', soft:'#F8FAFC', shadow:'0 2px 8px rgba(13,55,129,0.06)', warning:'#F59E0B', danger:'#DC2626' };
 
@@ -10,6 +13,7 @@ const PLATFORM_COLORS: Record<string,{bg:string,color:string}> = {
 };
 
 export default function AirbnbAdminPage() {
+  const { t } = useTranslation();
   const [properties, setProperties] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +46,7 @@ export default function AirbnbAdminPage() {
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ ...form, bedrooms: Number(form.bedrooms)||null, bathrooms: Number(form.bathrooms)||null, sqft: Number(form.sqft)||null }),
     }).then(d => d.json()).catch(() => ({ error: 'Failed' }));
-    if (r.success) { setMsg('Property added!'); setShowAdd(false); setForm({ name:'', address:'', city:'', state:'', zip_code:'', bedrooms:'', bathrooms:'', sqft:'', ical_url:'', platform:'AIRBNB' }); await load(); }
+    if (r.success) { setMsg('Property added'); setShowAdd(false); setForm({ name:'', address:'', city:'', state:'', zip_code:'', bedrooms:'', bathrooms:'', sqft:'', ical_url:'', platform:'AIRBNB' }); await load(); }
     else setMsg(r.error || 'Error adding property');
     setSaving(false);
   }
@@ -68,23 +72,23 @@ export default function AirbnbAdminPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto', fontFamily: "'Inter',system-ui,sans-serif" }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 28 }}>
         <div>
-          <p style={{ margin: '0 0 4px', color: C.greenDk, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>SHORT-TERM RENTALS</p>
-          <h1 style={{ margin: 0, fontSize: 'clamp(22px,3vw,32px)', fontWeight: 600, color: C.ink }}>Airbnb & Properties</h1>
-          <p style={{ margin: '6px 0 0', color: C.muted, fontSize: 14 }}>Manage properties, iCal sync, and post-checkout cleanings.</p>
+          <p style={{ margin: '0 0 4px', color: C.greenDk, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{t('admin.airbnb.kicker')}</p>
+          <h1 style={{ margin: 0, fontSize: 'clamp(22px,3vw,32px)', fontWeight: 600, color: C.ink }}>{t('admin.airbnb.title')}</h1>
+          <p style={{ margin: '6px 0 0', color: C.muted, fontSize: 14 }}>{t('admin.airbnb.subtitle')}</p>
         </div>
-        <button onClick={() => setShowAdd(s => !s)} style={{ padding: '10px 20px', borderRadius: 9999, border: 0, background: C.green, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Add Property</button>
+        <button onClick={() => setShowAdd(s => !s)} style={{ padding: '10px 20px', borderRadius: 9999, border: 0, background: C.green, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{'+ ' + t('admin.airbnb.addProperty')}</button>
       </div>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 16 }}>
         {[
-          { label: 'Total Properties', val: totalProps, icon: '🏠', color: C.navy },
-          { label: 'Active Properties', val: activeProps, icon: '✅', color: C.green },
-          { label: 'iCal Connected', val: withIcal, icon: '📅', color: C.blue },
-          { label: 'Pending Cleanings', val: pendingCleanings, icon: '🧹', color: pendingCleanings > 0 ? C.warning : C.muted },
+          { label: t('admin.airbnb.totalProperties'), val: totalProps, mark: 'PR', color: C.navy },
+          { label: t('admin.airbnb.activeProperties'), val: activeProps, mark: 'ON', color: C.green },
+          { label: t('admin.airbnb.icalConnected'), val: withIcal, mark: 'IC', color: C.blue },
+          { label: t('admin.airbnb.pendingCleanings'), val: pendingCleanings, mark: 'PC', color: pendingCleanings > 0 ? C.warning : C.muted },
         ].map(s => (
           <div key={s.label} style={card('20px')}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>{s.icon}</div>
+            <div style={{ marginBottom: 8 }}><MarkBadge mark={s.mark} color={s.color}/></div>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>{s.label}</div>
             <div style={{ fontSize: 32, fontWeight: 700, color: s.color }}>{s.val}</div>
           </div>
@@ -114,7 +118,7 @@ export default function AirbnbAdminPage() {
             <label style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', marginBottom: 4, display: 'block' }}>iCal URL (Airbnb / VRBO)</label>
             <input value={form.ical_url} onChange={e => setForm(f => ({...f,ical_url:e.target.value}))} placeholder="https://www.airbnb.com/calendar/ical/..." style={inp} />
           </div>
-          <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>📍 How to get iCal URL: Airbnb → Calendar → Availability Settings → Export Calendar</div>
+          <div style={{ marginTop: 8, fontSize: 11, color: C.muted }}>{t('admin.airbnb.icalHelp')}</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
             <button onClick={() => { setShowAdd(false); setMsg(''); }} style={{ flex: 1, padding: '10px 0', borderRadius: 9999, border: `1px solid ${C.border}`, background: '#fff', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
             <button onClick={addProperty} disabled={saving||!form.name} style={{ flex: 2, padding: '10px 0', borderRadius: 9999, border: 0, background: C.green, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, opacity: saving||!form.name ? 0.6 : 1 }}>{saving ? 'Saving...' : 'Add Property'}</button>
@@ -125,9 +129,9 @@ export default function AirbnbAdminPage() {
       {/* Properties List */}
       {loading ? <div style={{ padding: 40, textAlign: 'center', color: C.muted }}>Loading...</div> : (
         <>
-          <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: C.ink }}>Properties ({properties.length})</h3>
+          <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 600, color: C.ink }}>{t('admin.airbnb.properties')} ({properties.length})</h3>
           {properties.length === 0
-            ? <div style={{ ...card('60px'), textAlign: 'center', color: C.muted, marginBottom: 16 }}>No properties yet. Add your first one above.</div>
+            ? <div style={{ ...card('60px'), textAlign: 'center', color: C.muted, marginBottom: 16 }}>{t('admin.airbnb.noProperties')}</div>
             : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: 14, marginBottom: 16 }}>
                 {properties.map((p: any) => {
@@ -153,10 +157,10 @@ export default function AirbnbAdminPage() {
                         ))}
                       </div>
                       {p.ical_url
-                        ? <div style={{ fontSize: 11, color: C.blue, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📅 iCal: {p.ical_url.slice(0,40)}...</div>
-                        : <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>⚠️ No iCal connected</div>}
+                        ? <div style={{ fontSize: 11, color: C.blue, marginBottom: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>iCal: {p.ical_url.slice(0,40)}...</div>
+                        : <div style={{ fontSize: 11, color: C.muted, marginBottom: 10 }}>{t('admin.airbnb.noIcal')}</div>}
                       <button onClick={() => syncCalendar(p.id)} disabled={syncing === p.id || !p.ical_url} style={{ width: '100%', padding: '8px 0', borderRadius: 9999, border: `1px solid ${C.border}`, background: syncing === p.id ? C.soft : '#fff', color: C.navy, fontSize: 12, fontWeight: 600, cursor: p.ical_url ? 'pointer' : 'not-allowed', opacity: !p.ical_url ? 0.5 : 1 }}>
-                        {syncing === p.id ? '⟳ Syncing...' : '🔄 Sync Calendar'}
+                        {syncing === p.id ? t('admin.airbnb.syncing') : t('admin.airbnb.syncCalendar')}
                       </button>
                     </div>
                   );
@@ -164,12 +168,12 @@ export default function AirbnbAdminPage() {
               </div>
             )}
 
-          {/* Master Calendar hint */}
+          {/* {t('admin.airbnb.masterCalendar')} hint */}
           <div style={{ ...card('20px'), display: 'flex', alignItems: 'center', gap: 16, background: 'linear-gradient(135deg,#F0FDF4,#EFF6FF)' }}>
-            <span style={{ fontSize: 32 }}>📅</span>
+            <MarkBadge mark="MC" color={C.blue}/>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>Master Calendar</div>
-              <div style={{ fontSize: 13, color: C.muted }}>iCal sync runs every 15 minutes automatically. Checkouts trigger post-cleaning orders. Connect iCal URLs above to activate auto-scheduling.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.ink }}>{t('admin.airbnb.masterCalendar')}</div>
+              <div style={{ fontSize: 13, color: C.muted }}>{t('admin.airbnb.masterText')}</div>
             </div>
           </div>
         </>

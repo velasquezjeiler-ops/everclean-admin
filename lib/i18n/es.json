@@ -61,7 +61,13 @@
     "professionals": "Profesionales",
     "liveMap": "Mapa en Vivo",
     "financials": "Finanzas",
-    "navigation": "Navegacion"
+    "navigation": "Navegacion",
+    "airbnb": "Airbnb",
+    "vipWallet": "Billetera VIP",
+    "rfqs": "RFQs",
+    "evidence": "Evidencia",
+    "alerts": "Alertas",
+    "testSuite": "Panel de pruebas"
   },
   "pro": {
     "dashboard": {
@@ -382,6 +388,67 @@
       "stripeHelp": "Abre el dashboard de Stripe para manejar pagos, balances, transferencias, disputas y configuracion de cuenta.",
       "noData": "Aun no hay registros financieros",
       "error": "No se pudo cargar la data financiera. Revisa la conexion del backend."
+    },
+    "common": {
+      "loading": "Cargando...",
+      "noData": "Sin datos todavia",
+      "cancel": "Cancelar",
+      "saving": "Guardando..."
+    },
+    "airbnb": {
+      "kicker": "ALQUILERES CORTOS",
+      "title": "Airbnb y propiedades",
+      "subtitle": "Administra propiedades, iCal y limpiezas despues del checkout.",
+      "addProperty": "Agregar propiedad",
+      "totalProperties": "Propiedades totales",
+      "activeProperties": "Propiedades activas",
+      "icalConnected": "iCal conectado",
+      "pendingCleanings": "Limpiezas pendientes",
+      "properties": "Propiedades",
+      "noProperties": "No hay propiedades. Agrega la primera arriba.",
+      "masterCalendar": "Calendario maestro",
+      "masterText": "La sincronizacion iCal corre cada 15 minutos. Los checkouts crean ordenes de limpieza.",
+      "syncCalendar": "Sincronizar calendario",
+      "syncing": "Sincronizando...",
+      "noIcal": "Sin iCal conectado",
+      "icalHelp": "Como obtener iCal: Airbnb > Calendar > Availability Settings > Export Calendar"
+    },
+    "wallet": {
+      "kicker": "FINANZAS",
+      "title": "Billetera de tiempo VIP",
+      "subtitle": "Responsabilidades pendientes, uso de miembros y salud de billetera.",
+      "activeMembers": "Miembros VIP activos",
+      "hoursIssued": "Horas emitidas total",
+      "hoursConsumed": "Horas consumidas",
+      "outstandingLiability": "Responsabilidad pendiente",
+      "walletHealth": "Salud de billetera",
+      "topConsumers": "Mayores consumidores",
+      "recentTransactions": "Transacciones recientes",
+      "noTransactions": "Sin transacciones todavia",
+      "riskHigh": "ALTO",
+      "riskMedium": "MEDIO",
+      "riskLow": "BAJO"
+    },
+    "evidence": {
+      "kicker": "OPERACIONES",
+      "title": "Boveda de evidencia",
+      "subtitle": "Fotos, reportes de dano y documentacion lista para AirCover.",
+      "noItems": "No se encontraron evidencias",
+      "damagePending": "reportes de dano pendientes",
+      "aircoverReady": "Listo para AirCover"
+    },
+    "alerts": {
+      "kicker": "OPERACIONES",
+      "title": "Alertas y eventos n8n",
+      "subtitle": "Alertas en tiempo real de n8n, danos y fallos de pago.",
+      "noActive": "Sin alertas activas",
+      "noActiveText": "Las alertas del sistema apareceran aqui.",
+      "newAlerts": "alertas nuevas",
+      "acknowledge": "Reconocer"
+    },
+    "test": {
+      "title": "Panel interno de pruebas",
+      "warning": "TEST MODE — Internal use only. All actions use test accounts."
     }
   }
 }

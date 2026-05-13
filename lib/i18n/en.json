@@ -61,7 +61,13 @@
     "professionals": "Professionals",
     "liveMap": "Live Map",
     "financials": "Financials",
-    "navigation": "Navigation"
+    "navigation": "Navigation",
+    "airbnb": "Airbnb",
+    "vipWallet": "VIP Wallet",
+    "rfqs": "RFQs",
+    "evidence": "Evidence",
+    "alerts": "Alerts",
+    "testSuite": "Test Suite"
   },
   "pro": {
     "dashboard": {
@@ -385,6 +391,67 @@
       "stripeHelp": "Open the Stripe dashboard to manage payments, balances, transfers, disputes, and account settings.",
       "noData": "No financial records yet",
       "error": "Unable to load financial data. Check the backend connection."
+    },
+    "common": {
+      "loading": "Loading...",
+      "noData": "No data yet",
+      "cancel": "Cancel",
+      "saving": "Saving..."
+    },
+    "airbnb": {
+      "kicker": "SHORT-TERM RENTALS",
+      "title": "Airbnb & Properties",
+      "subtitle": "Manage properties, iCal sync, and post-checkout cleanings.",
+      "addProperty": "Add Property",
+      "totalProperties": "Total Properties",
+      "activeProperties": "Active Properties",
+      "icalConnected": "iCal Connected",
+      "pendingCleanings": "Pending Cleanings",
+      "properties": "Properties",
+      "noProperties": "No properties yet. Add your first one above.",
+      "masterCalendar": "Master Calendar",
+      "masterText": "iCal sync runs every 15 minutes automatically. Checkouts trigger post-cleaning orders.",
+      "syncCalendar": "Sync Calendar",
+      "syncing": "Syncing...",
+      "noIcal": "No iCal connected",
+      "icalHelp": "How to get iCal: Airbnb > Calendar > Availability Settings > Export Calendar"
+    },
+    "wallet": {
+      "kicker": "FINANCE",
+      "title": "VIP Time Wallet",
+      "subtitle": "Outstanding liabilities, member usage, and wallet health.",
+      "activeMembers": "Active VIP Members",
+      "hoursIssued": "Hours Issued Total",
+      "hoursConsumed": "Hours Consumed",
+      "outstandingLiability": "Outstanding Liability",
+      "walletHealth": "Wallet Health",
+      "topConsumers": "Top Consumers",
+      "recentTransactions": "Recent Transactions",
+      "noTransactions": "No transactions yet",
+      "riskHigh": "HIGH",
+      "riskMedium": "MEDIUM",
+      "riskLow": "LOW"
+    },
+    "evidence": {
+      "kicker": "OPERATIONS",
+      "title": "Evidence Vault",
+      "subtitle": "Photo evidence, damage reports, AirCover-ready documentation.",
+      "noItems": "No evidence items found",
+      "damagePending": "damage reports pending review",
+      "aircoverReady": "AirCover Ready"
+    },
+    "alerts": {
+      "kicker": "OPERATIONS",
+      "title": "Alerts & n8n Events",
+      "subtitle": "Real-time alerts from n8n, damage reports, payment failures.",
+      "noActive": "No active alerts",
+      "noActiveText": "Alerts from n8n and system events will appear here.",
+      "newAlerts": "new alerts",
+      "acknowledge": "Acknowledge"
+    },
+    "test": {
+      "title": "Internal Test Suite",
+      "warning": "TEST MODE — Internal use only. All actions use test accounts."
     }
   }
 }
